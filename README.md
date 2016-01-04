@@ -1,6 +1,9 @@
 # ScanLibrary
 ScanLibrary is an android document scanning library built on top of OpenCV, using the app you will be able to select the exact edges and crop the document accordingly from the selected 4 edges and change the perspective transformation of the cropped image.
 
+- Add document_scan_lib.aar to lib folder of your project
+- Add dependency in your grandle file: compile(name:'document_scan_lib', ext:'aar')
+
 # Screenshots
 
 <div align="center">
