@@ -2,3 +2,4 @@
 .idea/
 *.iml
 ScanDemoExample/local.properties
+ScanDemoExample/build/intermediates/dex-cache/cache.xml
