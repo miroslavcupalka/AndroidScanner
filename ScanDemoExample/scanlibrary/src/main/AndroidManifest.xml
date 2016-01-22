@@ -14,6 +14,10 @@
             android:name=".ScanActivity"
             android:label="@string/document_scann_lib_name" >
         </activity>
+        <activity
+            android:name=".ScanActivity2"
+            android:label="@string/document_scann_lib_name" >
+        </activity>
     </application>
 
 </manifest>
