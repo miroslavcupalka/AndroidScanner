@@ -103,7 +103,7 @@ public class PolygonView extends FrameLayout {
         return getOrderedPoints(points);
     }
 
-    public Map<Integer, PointF> getOrderedPoints(List<PointF> points) {
+    public static Map<Integer, PointF> getOrderedPoints(List<PointF> points) {
 
         PointF centerPoint = new PointF();
         int size = points.size();
@@ -248,7 +248,7 @@ public class PolygonView extends FrameLayout {
         return super.onTouchEvent(event);
     }
 
-    public boolean isValidShape(Map<Integer, PointF> pointFMap) {
+    public static boolean isValidShape(Map<Integer, PointF> pointFMap) {
         return pointFMap.size() == 4;
     }
 

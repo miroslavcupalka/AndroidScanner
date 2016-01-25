@@ -1,73 +1,87 @@
 package com.scanlibrary;
 
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.net.Uri;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 
-/**
- * Created by jhansi on 28/03/15.
- */
-public class ScanActivity extends Activity implements IScanner {
+import java.util.Locale;
+
+public class ScanActivity extends Activity {
+
+
+    public static final String EXTRA_BRAND_IMG_RES = "title_img_res";
+    public static final String EXTRA_TITLE = "title";
+    public static final String EXTRA_LANGUAGE = "language";
+    public static final String EXTRA_ACTION_BAR_COLOR = "ab_color";
+    public static final String RESULT_IMAGE_PATH = ScanFragment.RESULT_IMAGE_PATH;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.scan_layout);
-        init();
-    }
+        setContentView(R.layout.activity_scan);
 
-    private void init() {
-        PickImageFragment fragment = new PickImageFragment();
-        Bundle bundle = new Bundle();
-        bundle.putInt(ScanConstants.OPEN_INTENT_PREFERENCE, getPreferenceContent());
-        fragment.setArguments(bundle);
-        android.app.FragmentManager fragmentManager = getFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.content, fragment);
-        fragmentTransaction.commit();
-    }
+        int titleImgRes = getIntent().getExtras().getInt(EXTRA_BRAND_IMG_RES);
+        int abColor = getIntent().getExtras().getInt(EXTRA_ACTION_BAR_COLOR);
+        String title = getIntent().getExtras().getString(EXTRA_TITLE);
+        String locale = getIntent().getExtras().getString(EXTRA_LANGUAGE);
 
-    protected int getPreferenceContent() {
-        return getIntent().getIntExtra(ScanConstants.OPEN_INTENT_PREFERENCE, 0);
+        if (locale != null) {
+            Locale l = new Locale(locale);
+            Locale.setDefault(l);
+            Configuration config = new Configuration();
+            config.locale = l;
+            getBaseContext().getResources().updateConfiguration(config, getBaseContext().getResources().getDisplayMetrics());
+        }
+
+        if (title != null) setTitle(title);
+        if (titleImgRes != 0) getActionBar().setLogo(titleImgRes);
+
+        if (abColor != 0) {
+            getActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(abColor)));
+            getActionBar().setDisplayShowTitleEnabled(false);
+            getActionBar().setDisplayShowTitleEnabled(true);
+        }
+
+        if (savedInstanceState == null) {
+            Bundle args = new Bundle();
+            if (getIntent().getExtras() != null) {
+                args.putAll(getIntent().getExtras());
+            }
+
+            FragmentManager fragMan = getFragmentManager();
+            Fragment f = new ScanFragment();
+            f.setArguments(args);
+            FragmentTransaction fragTransaction = fragMan.beginTransaction();
+            fragTransaction.replace(R.id.contaner, f, "scan_frag").commit();
+        }
     }
 
     @Override
-    public void onBitmapSelect(Uri uri) {
-        ScanFragment fragment = new ScanFragment();
-        Bundle bundle = new Bundle();
-        bundle.putParcelable(ScanConstants.SELECTED_BITMAP, uri);
-        fragment.setArguments(bundle);
-        android.app.FragmentManager fragmentManager = getFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.content, fragment);
-        fragmentTransaction.addToBackStack(ScanFragment.class.toString());
-        fragmentTransaction.commit();
+    public void onBackPressed() {
+        ScanFragment scanFragment = (ScanFragment) getFragmentManager().findFragmentByTag("scan_frag");
+        if (scanFragment != null) {
+            scanFragment.onBackPressed();
+        }
+
+        super.onBackPressed();
     }
 
-    @Override
-    public void onScanFinish(Uri uri) {
-        ResultFragment fragment = new ResultFragment();
-        Bundle bundle = new Bundle();
-        bundle.putParcelable(ScanConstants.SCANNED_RESULT, uri);
-        fragment.setArguments(bundle);
-        android.app.FragmentManager fragmentManager = getFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.content, fragment);
-        fragmentTransaction.addToBackStack(ResultFragment.class.toString());
-        fragmentTransaction.commit();
-    }
 
-    public native Bitmap getScannedBitmap(Bitmap bitmap, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
+    public static native Bitmap getScannedBitmap(Bitmap bitmap, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
 
-    public native Bitmap getGrayBitmap(Bitmap bitmap);
+    public static native Bitmap getGrayBitmap(Bitmap bitmap);
 
-    public native Bitmap getMagicColorBitmap(Bitmap bitmap);
+    public static native Bitmap getMagicColorBitmap(Bitmap bitmap);
 
-    public native Bitmap getBWBitmap(Bitmap bitmap);
+    public static native Bitmap getBWBitmap(Bitmap bitmap);
 
-    public native float[] getPoints(Bitmap bitmap);
+    public static native float[] getPoints(Bitmap bitmap);
+
 
     static {
         System.loadLibrary("opencv_java");

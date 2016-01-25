@@ -3,3 +3,5 @@
 *.iml
 ScanDemoExample/local.properties
 ScanDemoExample/build/intermediates/dex-cache/cache.xml
+
+ScanDemoExample/build/intermediates/dex-cache/cache.xml
