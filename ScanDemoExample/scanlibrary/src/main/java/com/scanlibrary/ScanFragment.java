@@ -2,7 +2,6 @@ package com.scanlibrary;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.app.FragmentManager;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
@@ -61,6 +60,10 @@ public class ScanFragment extends Fragment {
     private Map<Integer, PointF> points;
 
     private boolean isCropMode = false;
+    private boolean isPointsDownScaled = false;
+
+    private int previousOreantation = -1;
+    private boolean isOreantationChanged = false;
 
     // ===========================================================
     // Constructors
@@ -92,8 +95,46 @@ public class ScanFragment extends Fragment {
         viewHolder.prepare(view);
         super.onViewCreated(view, savedInstanceState);
 
+        int currentOreantation = Utils.getScreenOrientation(getActivity());
+        if (previousOreantation == -1) {
+            previousOreantation = currentOreantation;
+            isOreantationChanged = false;
+        } else if (previousOreantation == currentOreantation) {
+            isOreantationChanged = false;
+        } else {
+            previousOreantation = currentOreantation;
+            isOreantationChanged = true;
+        }
+
         if (takenPhotoLocation == null) {
             takePhoto();
+        } else {
+            if (documentBitmap != null) {
+                viewHolder.sourceImageView.setImageBitmap(documentBitmap);
+            }
+        }
+
+        if (isCropMode) {
+            viewHolder.sourceFrame.post(new Runnable() {
+                @Override
+                public void run() {
+                    Bitmap scaledBitmap = scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+                    viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
+
+                    Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
+                    viewHolder.polygonView.setVisibility(View.VISIBLE);
+                    int padding = (int) getResources().getDimension(R.dimen.scanPadding);
+                    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
+                    layoutParams.gravity = Gravity.CENTER;
+                    viewHolder.polygonView.setLayoutParams(layoutParams);
+
+                    if (isOreantationChanged) {
+                        points = getOutlinePoints(tempBitmap);
+                        isPointsDownScaled = true;
+                    }
+                    viewHolder.polygonView.setPoints(points);
+                }
+            });
         }
     }
 
@@ -123,6 +164,7 @@ public class ScanFragment extends Fragment {
         inflater.inflate(R.menu.scan_menu, menu);
 
         cropBtn = menu.findItem(R.id.crop);
+        cropBtn.setVisible(!isCropMode);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -144,6 +186,21 @@ public class ScanFragment extends Fragment {
     // Methods
     // ===========================================================
 
+    /**
+     * Called From activity
+     */
+    public void onBackPressed() {
+        releaseAllBitmaps();
+        if (takenPhotoLocation != null) {
+            removeFile(takenPhotoLocation);
+        }
+    }
+
+    private void releaseAllBitmaps() {
+        if (takenPhotoBitmap != null) takenPhotoBitmap.recycle();
+        if (documentBitmap != null) documentBitmap.recycle();
+    }
+
     private void onCropButtonClicked() {
         cropBtn.setVisible(false);
         isCropMode = true;
@@ -151,7 +208,8 @@ public class ScanFragment extends Fragment {
         Bitmap scaledBitmap = scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
 
-        downScalePoints(points, takenPhotoBitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight());
+        if (!isPointsDownScaled) downScalePoints(points, takenPhotoBitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight());
+        isPointsDownScaled = true;
         viewHolder.polygonView.setPoints(points);
 
         Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
@@ -161,6 +219,7 @@ public class ScanFragment extends Fragment {
         layoutParams.gravity = Gravity.CENTER;
         viewHolder.polygonView.setLayoutParams(layoutParams);
     }
+
 
     private void onDoneButtonClicked() {
         if (isCropMode) {
@@ -178,6 +237,8 @@ public class ScanFragment extends Fragment {
             File scannedDocFile = createImageFile("scanned_doc");
             saveBitmapToFile(scannedDocFile, documentBitmap);
             removeFile(takenPhotoLocation);
+            releaseAllBitmaps();
+
             Intent intent = new Intent();
             intent.putExtra(RESULT_IMAGE_PATH, scannedDocFile.getAbsolutePath());
             getActivity().setResult(Activity.RESULT_OK, intent);
@@ -355,18 +416,22 @@ public class ScanFragment extends Fragment {
 
 
     protected void showProgressDialog(String message) {
-        progressDialogFragment = new ProgressDialogFragment(message);
-        FragmentManager fm = getFragmentManager();
-        progressDialogFragment.show(fm, ProgressDialogFragment.class.toString());
+        Bundle args = new Bundle();
+        args.putString(ProgressDialogFragment.EXTRA_MESSAGE, message);
+        progressDialogFragment = new ProgressDialogFragment();
+        progressDialogFragment.setArguments(args);
+        progressDialogFragment.show(getFragmentManager(), "progress_dialog");
     }
 
     protected void dismissDialog() {
-        progressDialogFragment.dismissAllowingStateLoss();
+        ProgressDialogFragment progressDialogFragment = (ProgressDialogFragment) getFragmentManager().findFragmentByTag("progress_dialog");
+        if (progressDialogFragment != null) progressDialogFragment.dismissAllowingStateLoss();
     }
 
     private void onDocumentFromBitmapTaskFinished(DocumentFromBitmapTaskResult result) {
         documentBitmap = result.bitmap;
         points = result.points;
+        isPointsDownScaled = false;
 
         viewHolder.sourceImageView.setImageBitmap(scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight()));
 
