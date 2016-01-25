@@ -401,7 +401,7 @@ public class ScanFragment extends Fragment {
     }
 
     private void showErrorDialog() {
-        Toast.makeText(getActivity(), "Error", Toast.LENGTH_LONG).show();
+        Toast.makeText(getActivity(), R.string.cant_crop, Toast.LENGTH_LONG).show();
     }
 
     private boolean isScanPointsValid(Map<Integer, PointF> points) {
@@ -415,9 +415,9 @@ public class ScanFragment extends Fragment {
     }
 
 
-    protected void showProgressDialog(String message) {
+    protected void showProgressDialog() {
         Bundle args = new Bundle();
-        args.putString(ProgressDialogFragment.EXTRA_MESSAGE, message);
+        args.putString(ProgressDialogFragment.EXTRA_MESSAGE, getString(R.string.transforming));
         progressDialogFragment = new ProgressDialogFragment();
         progressDialogFragment.setArguments(args);
         progressDialogFragment.show(getFragmentManager(), "progress_dialog");
@@ -458,7 +458,7 @@ public class ScanFragment extends Fragment {
 
         @Override
         protected void onPreExecute() {
-            showProgressDialog("Cropping");
+            showProgressDialog();
         }
 
         @Override

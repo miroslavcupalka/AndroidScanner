@@ -4,15 +4,19 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+
+import java.util.Locale;
 
 public class ScanActivity extends Activity {
 
 
     public static final String EXTRA_BRAND_IMG_RES = "title_img_res";
     public static final String EXTRA_TITLE = "title";
+    public static final String EXTRA_LANGUAGE = "language";
     public static final String EXTRA_ACTION_BAR_COLOR = "ab_color";
     public static final String RESULT_IMAGE_PATH = ScanFragment.RESULT_IMAGE_PATH;
 
@@ -24,6 +28,15 @@ public class ScanActivity extends Activity {
         int titleImgRes = getIntent().getExtras().getInt(EXTRA_BRAND_IMG_RES);
         int abColor = getIntent().getExtras().getInt(EXTRA_ACTION_BAR_COLOR);
         String title = getIntent().getExtras().getString(EXTRA_TITLE);
+        String locale = getIntent().getExtras().getString(EXTRA_LANGUAGE);
+
+        if (locale != null) {
+            Locale l = new Locale(locale);
+            Locale.setDefault(l);
+            Configuration config = new Configuration();
+            config.locale = l;
+            getBaseContext().getResources().updateConfiguration(config, getBaseContext().getResources().getDisplayMetrics());
+        }
 
         if (title != null) setTitle(title);
         if (titleImgRes != 0) getActionBar().setLogo(titleImgRes);
@@ -57,6 +70,7 @@ public class ScanActivity extends Activity {
 
         super.onBackPressed();
     }
+
 
     public static native Bitmap getScannedBitmap(Bitmap bitmap, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
 

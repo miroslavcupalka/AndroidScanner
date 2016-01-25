@@ -11,7 +11,7 @@
         android:id="@+id/done"
         android:icon="@drawable/ic_done_white_24dp"
         android:showAsAction="always"
-        android:title="@string/done"/>
+        android:title="@string/finish"/>
 
 
 </menu>
