@@ -18,8 +18,8 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -55,6 +55,10 @@ public class ScanActivity extends Activity {
     private Bitmap takenPhotoBitmap;
     private Bitmap documentBitmap;
 
+    private Map<Integer, PointF> points;
+
+    private boolean isCropMode = false;
+
     // ===========================================================
     // Constructors
     // ===========================================================
@@ -84,11 +88,8 @@ public class ScanActivity extends Activity {
             getActionBar().setDisplayShowTitleEnabled(true);
         }
 
-
         setContentView(R.layout.activity_scan);
         viewHolder.prepare(findViewById(android.R.id.content));
-
-        viewHolder.scanButton.setOnClickListener(new ScanButtonClickListener());
 
         if (savedInstanceState != null) {
             takenPhotoLocation = savedInstanceState.getString(SAVED_ARG_TAKEN_PHOTO_LOCATION);
@@ -97,7 +98,7 @@ public class ScanActivity extends Activity {
         if (takenPhotoLocation == null) {
             takePhoto();
         } else {
-            init();
+            // TODO
         }
     }
 
@@ -120,28 +121,80 @@ public class ScanActivity extends Activity {
         super.onSaveInstanceState(outState);
     }
 
+    private MenuItem cropBtn;
+    private MenuItem doneBtn;
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = new MenuInflater(this);
         menuInflater.inflate(R.menu.scan_menu, menu);
 
+        cropBtn = menu.findItem(R.id.crop);
+        doneBtn = menu.findItem(R.id.done);
+
         return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        if (item.getItemId() == R.id.crop) {
+            onCropButtonClicked();
+            return true;
+        } else if (item.getItemId() == R.id.done) {
+            onDoneButtonClicked();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     // ===========================================================
     // Methods
     // ===========================================================
 
+    private void onCropButtonClicked() {
+        cropBtn.setVisible(false);
+        isCropMode = true;
+
+        Bitmap scaledBitmap = scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
+
+        downScalePoints(points, takenPhotoBitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight());
+        viewHolder.polygonView.setPoints(points);
+
+        Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
+        viewHolder.polygonView.setVisibility(View.VISIBLE);
+        int padding = (int) getResources().getDimension(R.dimen.scanPadding);
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
+        layoutParams.gravity = Gravity.CENTER;
+        viewHolder.polygonView.setLayoutParams(layoutParams);
+    }
+
+    private void onDoneButtonClicked() {
+        if (isCropMode) {
+            isCropMode = false;
+            cropBtn.setVisible(true);
+
+            Map<Integer, PointF> points = viewHolder.polygonView.getPoints();
+            if (isScanPointsValid(points)) {
+                new DocumentFromBitmapTask(takenPhotoBitmap, points, viewHolder.sourceImageView.getWidth(), viewHolder.sourceImageView.getHeight()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            } else {
+                showErrorDialog();
+            }
+
+        } else {
+            // TODO finish
+        }
+    }
+
     private void onPhotoTaken() {
         takenPhotoBitmap = getBitmapFromLocation(takenPhotoLocation);
 
-        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap);
+        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap, null, 0, 0);
         documentFromBitmapTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
-    private static Bitmap getDocumentFromBitmap(Bitmap bitmap) {
-        Map<Integer, PointF> points = getEdgePoints(bitmap);
-
+    private static Bitmap cropDocumentFromBitmap(Bitmap bitmap, Map<Integer, PointF> points) {
         float x1 = (points.get(0).x);
         float x2 = (points.get(1).x);
         float x3 = (points.get(2).x);
@@ -153,6 +206,38 @@ public class ScanActivity extends Activity {
         Log.d("", "POints(" + x1 + "," + y1 + ")(" + x2 + "," + y2 + ")(" + x3 + "," + y3 + ")(" + x4 + "," + y4 + ")");
         Bitmap _bitmap = getScannedBitmap(bitmap, x1, y1, x2, y2, x3, y3, x4, y4);
         return _bitmap;
+    }
+
+    private static void upScalePoints(Map<Integer, PointF> points, Bitmap original, int scaledImgWidth, int scaledImgHeight) {
+        int width = original.getWidth();
+        int height = original.getHeight();
+        float xRatio = (float) width / scaledImgWidth;
+        float yRatio = (float) height / scaledImgHeight;
+
+        points.get(0).x = (points.get(0).x) * xRatio;
+        points.get(1).x = (points.get(1).x) * xRatio;
+        points.get(2).x = (points.get(2).x) * xRatio;
+        points.get(3).x = (points.get(3).x) * xRatio;
+        points.get(0).y = (points.get(0).y) * yRatio;
+        points.get(1).y = (points.get(1).y) * yRatio;
+        points.get(2).y = (points.get(2).y) * yRatio;
+        points.get(3).y = (points.get(3).y) * yRatio;
+    }
+
+    private static void downScalePoints(Map<Integer, PointF> points, Bitmap original, int targetImgWidth, int targetImgHeight) {
+        int width = original.getWidth();
+        int height = original.getHeight();
+        float xRatio = (float) width / targetImgWidth;
+        float yRatio = (float) height / targetImgHeight;
+
+        points.get(0).x = (points.get(0).x) / xRatio;
+        points.get(1).x = (points.get(1).x) / xRatio;
+        points.get(2).x = (points.get(2).x) / xRatio;
+        points.get(3).x = (points.get(3).x) / xRatio;
+        points.get(0).y = (points.get(0).y) / yRatio;
+        points.get(1).y = (points.get(1).y) / yRatio;
+        points.get(2).y = (points.get(2).y) / yRatio;
+        points.get(3).y = (points.get(3).y) / yRatio;
     }
 
     private void takePhoto() {
@@ -184,32 +269,10 @@ public class ScanActivity extends Activity {
         }
     }
 
-    private void init() {
-        viewHolder.sourceFrame.post(new Runnable() {
-            @Override
-            public void run() {
-                setBitmap(takenPhotoBitmap);
-            }
-        });
-    }
-
     private Bitmap getBitmapFromLocation(String absLocation) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         return BitmapFactory.decodeFile(absLocation, options);
-    }
-
-    private void setBitmap(Bitmap original) {
-        Bitmap scaledBitmap = scaledBitmap(original, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
-        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
-        Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
-        Map<Integer, PointF> pointFs = getEdgePoints(tempBitmap);
-        viewHolder.polygonView.setPoints(pointFs);
-        viewHolder.polygonView.setVisibility(View.VISIBLE);
-        int padding = (int) getResources().getDimension(R.dimen.scanPadding);
-        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
-        layoutParams.gravity = Gravity.CENTER;
-        viewHolder.polygonView.setLayoutParams(layoutParams);
     }
 
     private static Map<Integer, PointF> getEdgePoints(Bitmap tempBitmap) {
@@ -255,18 +318,6 @@ public class ScanActivity extends Activity {
         return orderedPoints;
     }
 
-    private class ScanButtonClickListener implements View.OnClickListener {
-        @Override
-        public void onClick(View v) {
-            Map<Integer, PointF> points = viewHolder.polygonView.getPoints();
-            if (isScanPointsValid(points)) {
-                new ScanAsyncTask(points).execute();
-            } else {
-                showErrorDialog();
-            }
-        }
-    }
-
     private void showErrorDialog() {
         Toast.makeText(this, "Error", Toast.LENGTH_LONG).show();
     }
@@ -275,30 +326,12 @@ public class ScanActivity extends Activity {
         return points.size() == 4;
     }
 
-    private Bitmap scaledBitmap(Bitmap bitmap, int width, int height) {
+    private Bitmap scaleBitmap(Bitmap bitmap, int width, int height) {
         Matrix m = new Matrix();
         m.setRectToRect(new RectF(0, 0, bitmap.getWidth(), bitmap.getHeight()), new RectF(0, 0, width, height), Matrix.ScaleToFit.CENTER);
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
     }
 
-    private Bitmap getScannedBitmap(Bitmap original, Map<Integer, PointF> points) {
-        int width = original.getWidth();
-        int height = original.getHeight();
-        float xRatio = (float) original.getWidth() / viewHolder.sourceImageView.getWidth();
-        float yRatio = (float) original.getHeight() / viewHolder.sourceImageView.getHeight();
-
-        float x1 = (points.get(0).x) * xRatio;
-        float x2 = (points.get(1).x) * xRatio;
-        float x3 = (points.get(2).x) * xRatio;
-        float x4 = (points.get(3).x) * xRatio;
-        float y1 = (points.get(0).y) * yRatio;
-        float y2 = (points.get(1).y) * yRatio;
-        float y3 = (points.get(2).y) * yRatio;
-        float y4 = (points.get(3).y) * yRatio;
-        Log.d("", "POints(" + x1 + "," + y1 + ")(" + x2 + "," + y2 + ")(" + x3 + "," + y3 + ")(" + x4 + "," + y4 + ")");
-        Bitmap _bitmap = getScannedBitmap(original, x1, y1, x2, y2, x3, y3, x4, y4);
-        return _bitmap;
-    }
 
     protected void showProgressDialog(String message) {
         progressDialogFragment = new ProgressDialogFragment(message);
@@ -312,8 +345,11 @@ public class ScanActivity extends Activity {
 
     private void onDocumentFromBitmapTaskFinished(DocumentFromBitmapTaskResult result) {
         documentBitmap = result.bitmap;
+        points = result.points;
 
-        viewHolder.sourceImageView.setImageBitmap(documentBitmap);
+        viewHolder.sourceImageView.setImageBitmap(scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight()));
+
+        viewHolder.polygonView.setVisibility(View.GONE);
     }
 
     // ===========================================================
@@ -323,9 +359,15 @@ public class ScanActivity extends Activity {
     private class DocumentFromBitmapTask extends AsyncTask<Void, Void, DocumentFromBitmapTaskResult> {
 
         private final Bitmap bitmap;
+        private final Map<Integer, PointF> points;
+        private final int scaledImgHeight;
+        private final int scaledImgWidth;
 
-        public DocumentFromBitmapTask(Bitmap bitmap) {
+        public DocumentFromBitmapTask(Bitmap bitmap, Map<Integer, PointF> points, int scaledImgWidth, int scaledImgHeight) {
             this.bitmap = bitmap;
+            this.points = points;
+            this.scaledImgHeight = scaledImgHeight;
+            this.scaledImgWidth = scaledImgWidth;
         }
 
         @Override
@@ -337,7 +379,14 @@ public class ScanActivity extends Activity {
         protected DocumentFromBitmapTaskResult doInBackground(Void... params) {
             DocumentFromBitmapTaskResult result = new DocumentFromBitmapTaskResult();
 
-            result.bitmap = getDocumentFromBitmap(bitmap);
+            if (points != null) {
+                result.points = points;
+                upScalePoints(points, bitmap, scaledImgWidth, scaledImgHeight);
+                result.bitmap = cropDocumentFromBitmap(bitmap, points);
+            } else {
+                result.points = getEdgePoints(bitmap);
+                result.bitmap = cropDocumentFromBitmap(bitmap, result.points);
+            }
 
             return result;
         }
@@ -351,51 +400,17 @@ public class ScanActivity extends Activity {
 
     private static class DocumentFromBitmapTaskResult {
         Bitmap bitmap;
+        Map<Integer, PointF> points;
         String errorMessage;
     }
 
-
-    private class ScanAsyncTask extends AsyncTask<Void, Void, Bitmap> {
-
-        private Map<Integer, PointF> points;
-
-        public ScanAsyncTask(Map<Integer, PointF> points) {
-            this.points = points;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            showProgressDialog(getString(R.string.scanning));
-        }
-
-        @Override
-        protected Bitmap doInBackground(Void... params) {
-            return getScannedBitmap(takenPhotoBitmap, points);
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
-            dismissDialog();
-            viewHolder.sourceImageView.setImageBitmap(bitmap);
-
-//            Uri uri = Utils.getUri(ScanActivity.this, bitmap);
-//            bitmap.recycle();
-//            scanner.onScanFinish(uri);
-            Toast.makeText(ScanActivity.this, "Scanned", Toast.LENGTH_LONG).show();
-        }
-    }
-
     private static class ViewHolder {
-        private Button scanButton;
         private ImageView sourceImageView;
         private FrameLayout sourceFrame;
         private PolygonView polygonView;
 
         void prepare(View parent) {
             sourceImageView = (ImageView) parent.findViewById(R.id.sourceImageView);
-            scanButton = (Button) parent.findViewById(R.id.scanButton);
             sourceFrame = (FrameLayout) parent.findViewById(R.id.sourceFrame);
             polygonView = (PolygonView) parent.findViewById(R.id.polygonView);
         }
