@@ -10,12 +10,8 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
-    <application
-        android:allowBackup="true">
-        <activity
-            android:name=".ScanActivity3"
-            android:label="@string/document_scann_lib_name">
-        </activity>
+    <application android:allowBackup="true">
+
         <activity
             android:name=".ScanActivity"
             android:theme="@android:style/Theme.Holo.Light.DarkActionBar">
