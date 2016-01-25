@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PointF;
@@ -25,6 +26,8 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -183,8 +186,37 @@ public class ScanActivity extends Activity {
             }
 
         } else {
-            // TODO finish
+            File scannedDocFile = createImageFile("scanned_doc");
+            saveBitmapToFile(scannedDocFile, documentBitmap);
+            removeFile(takenPhotoLocation);
+            Intent intent = new Intent();
+            intent.putExtra(RESULT_IMAGE_PATH, scannedDocFile.getAbsolutePath());
+            setResult(Activity.RESULT_OK, intent);
+            finish();
         }
+    }
+
+    private boolean saveBitmapToFile(File file, Bitmap bitmap) {
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(file);
+            bitmap.compress(CompressFormat.JPEG, 100, out);
+            // PNG is a lossless format, the compression factor (100) is ignored
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                if (out != null) {
+                    out.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void onPhotoTaken() {
@@ -243,19 +275,19 @@ public class ScanActivity extends Activity {
     private void takePhoto() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-        File photoFile = createImageFile();
+        File photoFile = createImageFile("takendocphoto");
         takenPhotoLocation = photoFile.getAbsolutePath();
 
         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
         startActivityForResult(takePictureIntent, TAKE_PHOTO_REQUEST_CODE);
     }
 
-    private File createImageFile() {
+    private File createImageFile(String fileName) {
         File storageDir = getExternalFilesDir("images");
         if (storageDir == null) {
             throw new RuntimeException("Not able to get to External storage");
         }
-        File image = new File(storageDir, "takenimgage.jpg");
+        File image = new File(storageDir, fileName + ".jpg");
 
         return image;
     }
@@ -401,7 +433,6 @@ public class ScanActivity extends Activity {
     private static class DocumentFromBitmapTaskResult {
         Bitmap bitmap;
         Map<Integer, PointF> points;
-        String errorMessage;
     }
 
     private static class ViewHolder {
