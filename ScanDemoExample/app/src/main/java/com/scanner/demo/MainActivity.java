@@ -10,7 +10,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
 
-import com.scanlibrary.ScanActivity2;
+import com.scanlibrary.ScanActivity;
 
 
 public class MainActivity extends ActionBarActivity implements OnClickListener {
@@ -81,7 +81,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CODE_SCAN && resultCode == Activity.RESULT_OK) {
-            String imgPath = data.getStringExtra(ScanActivity2.RESULT_IMAGE_PATH);
+            String imgPath = data.getStringExtra(ScanActivity.RESULT_IMAGE_PATH);
             Bitmap bitmap = getBitmapFromLocation(imgPath);
             viewHolder.image.setImageBitmap(bitmap);
 //            Uri uri = data.getExtras().getParcelable(ScanConstants.SCANNED_RESULT);
@@ -107,7 +107,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
     // ===========================================================
 
     private void onScanButtonClicked() {
-        Intent intent = new Intent(this, ScanActivity2.class);
+        Intent intent = new Intent(this, ScanActivity.class);
         startActivityForResult(intent, REQUEST_CODE_SCAN);
     }
 

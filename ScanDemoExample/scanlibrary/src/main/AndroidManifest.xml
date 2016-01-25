@@ -11,11 +11,11 @@
     <application
         android:allowBackup="true">
         <activity
-            android:name=".ScanActivity"
+            android:name=".ScanActivity3"
             android:label="@string/document_scann_lib_name" >
         </activity>
         <activity
-            android:name=".ScanActivity2"
+            android:name=".ScanActivity"
             android:label="@string/document_scann_lib_name" >
         </activity>
     </application>
