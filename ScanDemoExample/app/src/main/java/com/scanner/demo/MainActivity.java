@@ -108,6 +108,9 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 
     private void onScanButtonClicked() {
         Intent intent = new Intent(this, ScanActivity.class);
+        intent.putExtra(ScanActivity.EXTRA_BRAND_IMG_RES, R.drawable.ic_crop_white_24dp);
+        intent.putExtra(ScanActivity.EXTRA_TITLE, "Crop Document");
+        intent.putExtra(ScanActivity.EXTRA_ACTION_BAR_COLOR, R.color.green);
         startActivityForResult(intent, REQUEST_CODE_SCAN);
     }
 

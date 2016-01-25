@@ -9,22 +9,22 @@ import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,33 +36,59 @@ public class ScanActivity extends Activity {
     // Constants
     // ===========================================================
 
-
+    public static final String EXTRA_BRAND_IMG_RES = "title_img_res";
+    public static final String EXTRA_TITLE = "title";
+    public static final String EXTRA_ACTION_BAR_COLOR = "ab_color";
     public static final String RESULT_IMAGE_PATH = "imgPath";
 
     private static final int TAKE_PHOTO_REQUEST_CODE = 815;
     private static final String SAVED_ARG_TAKEN_PHOTO_LOCATION = "taken_photo_loc";
 
-
     // ===========================================================
     // Fields
     // ===========================================================
 
-
-    private Button scanButton;
-    private ImageView sourceImageView;
-    private FrameLayout sourceFrame;
-    private PolygonView polygonView;
-    private View view;
+    private ViewHolder viewHolder = new ViewHolder();
     private ProgressDialogFragment progressDialogFragment;
-    private Bitmap original;
 
     private String takenPhotoLocation;
+    private Bitmap takenPhotoBitmap;
+    private Bitmap documentBitmap;
+
+    // ===========================================================
+    // Constructors
+    // ===========================================================
+
+    // ===========================================================
+    // Getters & Setters
+    // ===========================================================
+
+    // ===========================================================
+    // Methods for/from SuperClass/Interfaces
+    // ===========================================================
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        int titleImgRes = getIntent().getExtras().getInt(EXTRA_BRAND_IMG_RES);
+        int abColor = getIntent().getExtras().getInt(EXTRA_ACTION_BAR_COLOR);
+        String title = getIntent().getExtras().getString(EXTRA_TITLE);
+
+        if (title != null) setTitle(title);
+        if (titleImgRes != 0) getActionBar().setLogo(titleImgRes);
+
+        if (abColor != 0) {
+            getActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(abColor)));
+            getActionBar().setDisplayShowTitleEnabled(false);
+            getActionBar().setDisplayShowTitleEnabled(true);
+        }
+
+
         setContentView(R.layout.activity_scan);
-        view = findViewById(android.R.id.content);
+        viewHolder.prepare(findViewById(android.R.id.content));
+
+        viewHolder.scanButton.setOnClickListener(new ScanButtonClickListener());
 
         if (savedInstanceState != null) {
             takenPhotoLocation = savedInstanceState.getString(SAVED_ARG_TAKEN_PHOTO_LOCATION);
@@ -79,11 +105,7 @@ public class ScanActivity extends Activity {
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (requestCode == TAKE_PHOTO_REQUEST_CODE) {
             if (resultCode == Activity.RESULT_OK) {
-                init();
-//                Intent i = new Intent();
-//                i.putExtra(RESULT_IMAGE_PATH, takenPhotoLocation);
-//                setResult(Activity.RESULT_OK, i);
-//                finish();
+                onPhotoTaken();
             } else if (resultCode == Activity.RESULT_CANCELED) {
                 removeFile(takenPhotoLocation);
                 setResult(Activity.RESULT_CANCELED);
@@ -96,6 +118,41 @@ public class ScanActivity extends Activity {
     protected void onSaveInstanceState(Bundle outState) {
         outState.putString(SAVED_ARG_TAKEN_PHOTO_LOCATION, takenPhotoLocation);
         super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = new MenuInflater(this);
+        menuInflater.inflate(R.menu.scan_menu, menu);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    // ===========================================================
+    // Methods
+    // ===========================================================
+
+    private void onPhotoTaken() {
+        takenPhotoBitmap = getBitmapFromLocation(takenPhotoLocation);
+
+        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap);
+        documentFromBitmapTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+
+    private static Bitmap getDocumentFromBitmap(Bitmap bitmap) {
+        Map<Integer, PointF> points = getEdgePoints(bitmap);
+
+        float x1 = (points.get(0).x);
+        float x2 = (points.get(1).x);
+        float x3 = (points.get(2).x);
+        float x4 = (points.get(3).x);
+        float y1 = (points.get(0).y);
+        float y2 = (points.get(1).y);
+        float y3 = (points.get(2).y);
+        float y4 = (points.get(3).y);
+        Log.d("", "POints(" + x1 + "," + y1 + ")(" + x2 + "," + y2 + ")(" + x3 + "," + y3 + ")(" + x4 + "," + y4 + ")");
+        Bitmap _bitmap = getScannedBitmap(bitmap, x1, y1, x2, y2, x3, y3, x4, y4);
+        return _bitmap;
     }
 
     private void takePhoto() {
@@ -128,18 +185,10 @@ public class ScanActivity extends Activity {
     }
 
     private void init() {
-        sourceImageView = (ImageView) view.findViewById(R.id.sourceImageView);
-        scanButton = (Button) view.findViewById(R.id.scanButton);
-        scanButton.setOnClickListener(new ScanButtonClickListener());
-        sourceFrame = (FrameLayout) view.findViewById(R.id.sourceFrame);
-        polygonView = (PolygonView) view.findViewById(R.id.polygonView);
-        sourceFrame.post(new Runnable() {
+        viewHolder.sourceFrame.post(new Runnable() {
             @Override
             public void run() {
-                original = getBitmap();
-                if (original != null) {
-                    setBitmap(original);
-                }
+                setBitmap(takenPhotoBitmap);
             }
         });
     }
@@ -150,30 +199,26 @@ public class ScanActivity extends Activity {
         return BitmapFactory.decodeFile(absLocation, options);
     }
 
-    private Bitmap getBitmap() {
-        return getBitmapFromLocation(takenPhotoLocation);
-    }
-
     private void setBitmap(Bitmap original) {
-        Bitmap scaledBitmap = scaledBitmap(original, sourceFrame.getWidth(), sourceFrame.getHeight());
-        sourceImageView.setImageBitmap(scaledBitmap);
-        Bitmap tempBitmap = ((BitmapDrawable) sourceImageView.getDrawable()).getBitmap();
+        Bitmap scaledBitmap = scaledBitmap(original, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
+        Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
         Map<Integer, PointF> pointFs = getEdgePoints(tempBitmap);
-        polygonView.setPoints(pointFs);
-        polygonView.setVisibility(View.VISIBLE);
+        viewHolder.polygonView.setPoints(pointFs);
+        viewHolder.polygonView.setVisibility(View.VISIBLE);
         int padding = (int) getResources().getDimension(R.dimen.scanPadding);
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
         layoutParams.gravity = Gravity.CENTER;
-        polygonView.setLayoutParams(layoutParams);
+        viewHolder.polygonView.setLayoutParams(layoutParams);
     }
 
-    private Map<Integer, PointF> getEdgePoints(Bitmap tempBitmap) {
+    private static Map<Integer, PointF> getEdgePoints(Bitmap tempBitmap) {
         List<PointF> pointFs = getContourEdgePoints(tempBitmap);
         Map<Integer, PointF> orderedPoints = orderedValidEdgePoints(tempBitmap, pointFs);
         return orderedPoints;
     }
 
-    private List<PointF> getContourEdgePoints(Bitmap tempBitmap) {
+    private static List<PointF> getContourEdgePoints(Bitmap tempBitmap) {
         float[] points = getPoints(tempBitmap);
         float x1 = points[0];
         float x2 = points[1];
@@ -193,7 +238,7 @@ public class ScanActivity extends Activity {
         return pointFs;
     }
 
-    private Map<Integer, PointF> getOutlinePoints(Bitmap tempBitmap) {
+    private static Map<Integer, PointF> getOutlinePoints(Bitmap tempBitmap) {
         Map<Integer, PointF> outlinePoints = new HashMap<>();
         outlinePoints.put(0, new PointF(0, 0));
         outlinePoints.put(1, new PointF(tempBitmap.getWidth(), 0));
@@ -202,9 +247,9 @@ public class ScanActivity extends Activity {
         return outlinePoints;
     }
 
-    private Map<Integer, PointF> orderedValidEdgePoints(Bitmap tempBitmap, List<PointF> pointFs) {
-        Map<Integer, PointF> orderedPoints = polygonView.getOrderedPoints(pointFs);
-        if (!polygonView.isValidShape(orderedPoints)) {
+    private static Map<Integer, PointF> orderedValidEdgePoints(Bitmap tempBitmap, List<PointF> pointFs) {
+        Map<Integer, PointF> orderedPoints = PolygonView.getOrderedPoints(pointFs);
+        if (!PolygonView.isValidShape(orderedPoints)) {
             orderedPoints = getOutlinePoints(tempBitmap);
         }
         return orderedPoints;
@@ -213,7 +258,7 @@ public class ScanActivity extends Activity {
     private class ScanButtonClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            Map<Integer, PointF> points = polygonView.getPoints();
+            Map<Integer, PointF> points = viewHolder.polygonView.getPoints();
             if (isScanPointsValid(points)) {
                 new ScanAsyncTask(points).execute();
             } else {
@@ -239,8 +284,8 @@ public class ScanActivity extends Activity {
     private Bitmap getScannedBitmap(Bitmap original, Map<Integer, PointF> points) {
         int width = original.getWidth();
         int height = original.getHeight();
-        float xRatio = (float) original.getWidth() / sourceImageView.getWidth();
-        float yRatio = (float) original.getHeight() / sourceImageView.getHeight();
+        float xRatio = (float) original.getWidth() / viewHolder.sourceImageView.getWidth();
+        float yRatio = (float) original.getHeight() / viewHolder.sourceImageView.getHeight();
 
         float x1 = (points.get(0).x) * xRatio;
         float x2 = (points.get(1).x) * xRatio;
@@ -254,6 +299,61 @@ public class ScanActivity extends Activity {
         Bitmap _bitmap = getScannedBitmap(original, x1, y1, x2, y2, x3, y3, x4, y4);
         return _bitmap;
     }
+
+    protected void showProgressDialog(String message) {
+        progressDialogFragment = new ProgressDialogFragment(message);
+        FragmentManager fm = getFragmentManager();
+        progressDialogFragment.show(fm, ProgressDialogFragment.class.toString());
+    }
+
+    protected void dismissDialog() {
+        progressDialogFragment.dismissAllowingStateLoss();
+    }
+
+    private void onDocumentFromBitmapTaskFinished(DocumentFromBitmapTaskResult result) {
+        documentBitmap = result.bitmap;
+
+        viewHolder.sourceImageView.setImageBitmap(documentBitmap);
+    }
+
+    // ===========================================================
+    // Inner and Anonymous Classes
+    // ===========================================================
+
+    private class DocumentFromBitmapTask extends AsyncTask<Void, Void, DocumentFromBitmapTaskResult> {
+
+        private final Bitmap bitmap;
+
+        public DocumentFromBitmapTask(Bitmap bitmap) {
+            this.bitmap = bitmap;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            showProgressDialog("Cropping");
+        }
+
+        @Override
+        protected DocumentFromBitmapTaskResult doInBackground(Void... params) {
+            DocumentFromBitmapTaskResult result = new DocumentFromBitmapTaskResult();
+
+            result.bitmap = getDocumentFromBitmap(bitmap);
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(DocumentFromBitmapTaskResult documentFromBitmapTaskResult) {
+            onDocumentFromBitmapTaskFinished(documentFromBitmapTaskResult);
+            dismissDialog();
+        }
+    }
+
+    private static class DocumentFromBitmapTaskResult {
+        Bitmap bitmap;
+        String errorMessage;
+    }
+
 
     private class ScanAsyncTask extends AsyncTask<Void, Void, Bitmap> {
 
@@ -271,14 +371,14 @@ public class ScanActivity extends Activity {
 
         @Override
         protected Bitmap doInBackground(Void... params) {
-            return getScannedBitmap(original, points);
+            return getScannedBitmap(takenPhotoBitmap, points);
         }
 
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
             dismissDialog();
-            sourceImageView.setImageBitmap(bitmap);
+            viewHolder.sourceImageView.setImageBitmap(bitmap);
 
 //            Uri uri = Utils.getUri(ScanActivity.this, bitmap);
 //            bitmap.recycle();
@@ -287,25 +387,29 @@ public class ScanActivity extends Activity {
         }
     }
 
-    protected void showProgressDialog(String message) {
-        progressDialogFragment = new ProgressDialogFragment(message);
-        FragmentManager fm = getFragmentManager();
-        progressDialogFragment.show(fm, ProgressDialogFragment.class.toString());
+    private static class ViewHolder {
+        private Button scanButton;
+        private ImageView sourceImageView;
+        private FrameLayout sourceFrame;
+        private PolygonView polygonView;
+
+        void prepare(View parent) {
+            sourceImageView = (ImageView) parent.findViewById(R.id.sourceImageView);
+            scanButton = (Button) parent.findViewById(R.id.scanButton);
+            sourceFrame = (FrameLayout) parent.findViewById(R.id.sourceFrame);
+            polygonView = (PolygonView) parent.findViewById(R.id.polygonView);
+        }
     }
 
-    protected void dismissDialog() {
-        progressDialogFragment.dismissAllowingStateLoss();
-    }
+    public static native Bitmap getScannedBitmap(Bitmap bitmap, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
 
-    public native Bitmap getScannedBitmap(Bitmap bitmap, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
+    public static native Bitmap getGrayBitmap(Bitmap bitmap);
 
-    public native Bitmap getGrayBitmap(Bitmap bitmap);
+    public static native Bitmap getMagicColorBitmap(Bitmap bitmap);
 
-    public native Bitmap getMagicColorBitmap(Bitmap bitmap);
+    public static native Bitmap getBWBitmap(Bitmap bitmap);
 
-    public native Bitmap getBWBitmap(Bitmap bitmap);
-
-    public native float[] getPoints(Bitmap bitmap);
+    public static native float[] getPoints(Bitmap bitmap);
 
 
     static {

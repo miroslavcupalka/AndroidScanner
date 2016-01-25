@@ -28,4 +28,7 @@ public class Utils {
         Bitmap bitmap = MediaStore.Images.Media.getBitmap(context.getContentResolver(), uri);
         return bitmap;
     }
+
+
+
 }
