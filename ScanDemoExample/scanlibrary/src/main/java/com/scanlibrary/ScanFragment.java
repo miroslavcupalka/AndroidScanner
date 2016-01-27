@@ -26,6 +26,8 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.davemorrissey.labs.subscaleview.ScaleImageView;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -60,10 +62,8 @@ public class ScanFragment extends Fragment {
     private Map<Integer, PointF> points;
 
     private boolean isCropMode = false;
-    private boolean isPointsDownScaled = false;
 
     private int previousOreantation = -1;
-    private boolean isOreantationChanged = false;
 
     // ===========================================================
     // Constructors
@@ -98,12 +98,8 @@ public class ScanFragment extends Fragment {
         int currentOreantation = Utils.getScreenOrientation(getActivity());
         if (previousOreantation == -1) {
             previousOreantation = currentOreantation;
-            isOreantationChanged = false;
-        } else if (previousOreantation == currentOreantation) {
-            isOreantationChanged = false;
-        } else {
-            previousOreantation = currentOreantation;
-            isOreantationChanged = true;
+        } else if (previousOreantation != currentOreantation) {
+            points = null;
         }
 
         if (takenPhotoLocation == null) {
@@ -111,6 +107,9 @@ public class ScanFragment extends Fragment {
         } else {
             if (documentBitmap != null) {
                 viewHolder.sourceImageView.setImageBitmap(documentBitmap);
+                viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
+                viewHolder.scaleImageView.setImageBitmap(documentBitmap);
+                viewHolder.scaleImageView.setVisibility(View.VISIBLE);
             }
         }
 
@@ -128,9 +127,8 @@ public class ScanFragment extends Fragment {
                     layoutParams.gravity = Gravity.CENTER;
                     viewHolder.polygonView.setLayoutParams(layoutParams);
 
-                    if (isOreantationChanged) {
+                    if (points == null) {
                         points = getOutlinePoints(tempBitmap);
-                        isPointsDownScaled = true;
                     }
                     viewHolder.polygonView.setPoints(points);
                 }
@@ -158,13 +156,17 @@ public class ScanFragment extends Fragment {
     }
 
     private MenuItem cropBtn;
+    private MenuItem rotateBtn;
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.scan_menu, menu);
 
         cropBtn = menu.findItem(R.id.crop);
+        rotateBtn = menu.findItem(R.id.rotate);
+
         cropBtn.setVisible(!isCropMode);
+        rotateBtn.setVisible(!isCropMode);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -177,6 +179,9 @@ public class ScanFragment extends Fragment {
             return true;
         } else if (item.getItemId() == R.id.done) {
             onDoneButtonClicked();
+            return true;
+        } else if (item.getItemId() == R.id.rotate) {
+            onRotateButtonClicked();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -203,21 +208,42 @@ public class ScanFragment extends Fragment {
 
     private void onCropButtonClicked() {
         cropBtn.setVisible(false);
+        rotateBtn.setVisible(false);
         isCropMode = true;
 
         Bitmap scaledBitmap = scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
-
-        if (!isPointsDownScaled) downScalePoints(points, takenPhotoBitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight());
-        isPointsDownScaled = true;
-        viewHolder.polygonView.setPoints(points);
+        viewHolder.sourceImageView.setVisibility(View.VISIBLE);
+        viewHolder.scaleImageView.setVisibility(View.GONE);
 
         Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
         viewHolder.polygonView.setVisibility(View.VISIBLE);
+
+        points = getEdgePoints(tempBitmap);
+
+        viewHolder.polygonView.setPoints(points);
         int padding = (int) getResources().getDimension(R.dimen.scanPadding);
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
         layoutParams.gravity = Gravity.CENTER;
         viewHolder.polygonView.setLayoutParams(layoutParams);
+    }
+
+    private void onRotateButtonClicked() {
+        Bitmap takenPhotoBitmapTmp = Utils.rotateBitmap(takenPhotoBitmap, -90);
+        takenPhotoBitmap.recycle();
+        takenPhotoBitmap = takenPhotoBitmapTmp;
+
+        Bitmap documentBitmapTmp = Utils.rotateBitmap(documentBitmap, -90);
+        documentBitmap.recycle();
+        documentBitmap = documentBitmapTmp;
+
+        Bitmap scaledBitmap = scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
+        viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
+        viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
+        viewHolder.scaleImageView.setVisibility(View.VISIBLE);
+//        Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
+        points = getOutlinePoints(viewHolder.sourceFrame);
     }
 
 
@@ -225,6 +251,7 @@ public class ScanFragment extends Fragment {
         if (isCropMode) {
             isCropMode = false;
             cropBtn.setVisible(true);
+            rotateBtn.setVisible(true);
 
             Map<Integer, PointF> points = viewHolder.polygonView.getPoints();
             if (isScanPointsValid(points)) {
@@ -392,6 +419,15 @@ public class ScanFragment extends Fragment {
         return outlinePoints;
     }
 
+    private static Map<Integer, PointF> getOutlinePoints(View view) {
+        Map<Integer, PointF> outlinePoints = new HashMap<>();
+        outlinePoints.put(0, new PointF(0, 0));
+        outlinePoints.put(1, new PointF(view.getWidth(), 0));
+        outlinePoints.put(2, new PointF(0, view.getHeight()));
+        outlinePoints.put(3, new PointF(view.getWidth(), view.getHeight()));
+        return outlinePoints;
+    }
+
     private static Map<Integer, PointF> orderedValidEdgePoints(Bitmap tempBitmap, List<PointF> pointFs) {
         Map<Integer, PointF> orderedPoints = PolygonView.getOrderedPoints(pointFs);
         if (!PolygonView.isValidShape(orderedPoints)) {
@@ -431,9 +467,12 @@ public class ScanFragment extends Fragment {
     private void onDocumentFromBitmapTaskFinished(DocumentFromBitmapTaskResult result) {
         documentBitmap = result.bitmap;
         points = result.points;
-        isPointsDownScaled = false;
 
-        viewHolder.sourceImageView.setImageBitmap(scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight()));
+        Bitmap scaledBitmap = scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
+        viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
+        viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
+        viewHolder.scaleImageView.setVisibility(View.VISIBLE);
 
         viewHolder.polygonView.setVisibility(View.GONE);
     }
@@ -463,6 +502,7 @@ public class ScanFragment extends Fragment {
 
         @Override
         protected DocumentFromBitmapTaskResult doInBackground(Void... params) {
+            System.gc();
             DocumentFromBitmapTaskResult result = new DocumentFromBitmapTaskResult();
 
             if (points != null) {
@@ -491,11 +531,13 @@ public class ScanFragment extends Fragment {
 
     private static class ViewHolder {
         private ImageView sourceImageView;
+        private ScaleImageView scaleImageView;
         private FrameLayout sourceFrame;
         private PolygonView polygonView;
 
         void prepare(View parent) {
             sourceImageView = (ImageView) parent.findViewById(R.id.sourceImageView);
+            scaleImageView = (ScaleImageView) parent.findViewById(R.id.scaleImage);
             sourceFrame = (FrameLayout) parent.findViewById(R.id.sourceFrame);
             polygonView = (PolygonView) parent.findViewById(R.id.polygonView);
         }

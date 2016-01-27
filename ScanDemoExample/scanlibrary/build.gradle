@@ -29,4 +29,6 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    //Library for Image View That have Ability to zoom...
+    compile 'com.davemorrissey.labs:subsampling-scale-image-view:2.3.0'
 }
