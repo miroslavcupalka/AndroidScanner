@@ -60,10 +60,8 @@ public class ScanFragment extends Fragment {
     private Map<Integer, PointF> points;
 
     private boolean isCropMode = false;
-    private boolean isPointsDownScaled = false;
 
     private int previousOreantation = -1;
-    private boolean isOreantationChanged = false;
 
     // ===========================================================
     // Constructors
@@ -98,12 +96,8 @@ public class ScanFragment extends Fragment {
         int currentOreantation = Utils.getScreenOrientation(getActivity());
         if (previousOreantation == -1) {
             previousOreantation = currentOreantation;
-            isOreantationChanged = false;
-        } else if (previousOreantation == currentOreantation) {
-            isOreantationChanged = false;
-        } else {
-            previousOreantation = currentOreantation;
-            isOreantationChanged = true;
+        } else if (previousOreantation != currentOreantation) {
+            points = null;
         }
 
         if (takenPhotoLocation == null) {
@@ -128,9 +122,8 @@ public class ScanFragment extends Fragment {
                     layoutParams.gravity = Gravity.CENTER;
                     viewHolder.polygonView.setLayoutParams(layoutParams);
 
-                    if (isOreantationChanged) {
+                    if (points == null) {
                         points = getOutlinePoints(tempBitmap);
-                        isPointsDownScaled = true;
                     }
                     viewHolder.polygonView.setPoints(points);
                 }
@@ -216,12 +209,12 @@ public class ScanFragment extends Fragment {
         Bitmap scaledBitmap = scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
 
-        if (!isPointsDownScaled) downScalePoints(points, takenPhotoBitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight());
-        isPointsDownScaled = true;
-        viewHolder.polygonView.setPoints(points);
-
         Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
         viewHolder.polygonView.setVisibility(View.VISIBLE);
+
+        points = getEdgePoints(tempBitmap);
+
+        viewHolder.polygonView.setPoints(points);
         int padding = (int) getResources().getDimension(R.dimen.scanPadding);
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
         layoutParams.gravity = Gravity.CENTER;
@@ -463,7 +456,6 @@ public class ScanFragment extends Fragment {
     private void onDocumentFromBitmapTaskFinished(DocumentFromBitmapTaskResult result) {
         documentBitmap = result.bitmap;
         points = result.points;
-        isPointsDownScaled = false;
 
         viewHolder.sourceImageView.setImageBitmap(scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight()));
 
