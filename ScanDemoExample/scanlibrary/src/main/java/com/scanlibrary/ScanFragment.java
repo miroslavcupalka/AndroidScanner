@@ -26,6 +26,8 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.davemorrissey.labs.subscaleview.ScaleImageView;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -105,6 +107,9 @@ public class ScanFragment extends Fragment {
         } else {
             if (documentBitmap != null) {
                 viewHolder.sourceImageView.setImageBitmap(documentBitmap);
+                viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
+                viewHolder.scaleImageView.setImageBitmap(documentBitmap);
+                viewHolder.scaleImageView.setVisibility(View.VISIBLE);
             }
         }
 
@@ -208,6 +213,8 @@ public class ScanFragment extends Fragment {
 
         Bitmap scaledBitmap = scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
+        viewHolder.sourceImageView.setVisibility(View.VISIBLE);
+        viewHolder.scaleImageView.setVisibility(View.GONE);
 
         Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
         viewHolder.polygonView.setVisibility(View.VISIBLE);
@@ -230,7 +237,11 @@ public class ScanFragment extends Fragment {
         documentBitmap.recycle();
         documentBitmap = documentBitmapTmp;
 
-        viewHolder.sourceImageView.setImageBitmap(scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight()));
+        Bitmap scaledBitmap = scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
+        viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
+        viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
+        viewHolder.scaleImageView.setVisibility(View.VISIBLE);
 //        Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
         points = getOutlinePoints(viewHolder.sourceFrame);
     }
@@ -457,7 +468,11 @@ public class ScanFragment extends Fragment {
         documentBitmap = result.bitmap;
         points = result.points;
 
-        viewHolder.sourceImageView.setImageBitmap(scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight()));
+        Bitmap scaledBitmap = scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
+        viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
+        viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
+        viewHolder.scaleImageView.setVisibility(View.VISIBLE);
 
         viewHolder.polygonView.setVisibility(View.GONE);
     }
@@ -487,6 +502,7 @@ public class ScanFragment extends Fragment {
 
         @Override
         protected DocumentFromBitmapTaskResult doInBackground(Void... params) {
+            System.gc();
             DocumentFromBitmapTaskResult result = new DocumentFromBitmapTaskResult();
 
             if (points != null) {
@@ -515,11 +531,13 @@ public class ScanFragment extends Fragment {
 
     private static class ViewHolder {
         private ImageView sourceImageView;
+        private ScaleImageView scaleImageView;
         private FrameLayout sourceFrame;
         private PolygonView polygonView;
 
         void prepare(View parent) {
             sourceImageView = (ImageView) parent.findViewById(R.id.sourceImageView);
+            scaleImageView = (ScaleImageView) parent.findViewById(R.id.scaleImage);
             sourceFrame = (FrameLayout) parent.findViewById(R.id.sourceFrame);
             polygonView = (PolygonView) parent.findViewById(R.id.polygonView);
         }
