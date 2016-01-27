@@ -158,13 +158,17 @@ public class ScanFragment extends Fragment {
     }
 
     private MenuItem cropBtn;
+    private MenuItem rotateBtn;
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.scan_menu, menu);
 
         cropBtn = menu.findItem(R.id.crop);
+        rotateBtn = menu.findItem(R.id.rotate);
+
         cropBtn.setVisible(!isCropMode);
+        rotateBtn.setVisible(!isCropMode);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -177,6 +181,9 @@ public class ScanFragment extends Fragment {
             return true;
         } else if (item.getItemId() == R.id.done) {
             onDoneButtonClicked();
+            return true;
+        } else if (item.getItemId() == R.id.rotate) {
+            onRotateButtonClicked();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -203,6 +210,7 @@ public class ScanFragment extends Fragment {
 
     private void onCropButtonClicked() {
         cropBtn.setVisible(false);
+        rotateBtn.setVisible(false);
         isCropMode = true;
 
         Bitmap scaledBitmap = scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
@@ -220,11 +228,26 @@ public class ScanFragment extends Fragment {
         viewHolder.polygonView.setLayoutParams(layoutParams);
     }
 
+    private void onRotateButtonClicked() {
+        Bitmap takenPhotoBitmapTmp = Utils.rotateBitmap(takenPhotoBitmap, -90);
+        takenPhotoBitmap.recycle();
+        takenPhotoBitmap = takenPhotoBitmapTmp;
+
+        Bitmap documentBitmapTmp = Utils.rotateBitmap(documentBitmap, -90);
+        documentBitmap.recycle();
+        documentBitmap = documentBitmapTmp;
+
+        viewHolder.sourceImageView.setImageBitmap(scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight()));
+//        Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
+        points = getOutlinePoints(viewHolder.sourceFrame);
+    }
+
 
     private void onDoneButtonClicked() {
         if (isCropMode) {
             isCropMode = false;
             cropBtn.setVisible(true);
+            rotateBtn.setVisible(true);
 
             Map<Integer, PointF> points = viewHolder.polygonView.getPoints();
             if (isScanPointsValid(points)) {
@@ -389,6 +412,15 @@ public class ScanFragment extends Fragment {
         outlinePoints.put(1, new PointF(tempBitmap.getWidth(), 0));
         outlinePoints.put(2, new PointF(0, tempBitmap.getHeight()));
         outlinePoints.put(3, new PointF(tempBitmap.getWidth(), tempBitmap.getHeight()));
+        return outlinePoints;
+    }
+
+    private static Map<Integer, PointF> getOutlinePoints(View view) {
+        Map<Integer, PointF> outlinePoints = new HashMap<>();
+        outlinePoints.put(0, new PointF(0, 0));
+        outlinePoints.put(1, new PointF(view.getWidth(), 0));
+        outlinePoints.put(2, new PointF(0, view.getHeight()));
+        outlinePoints.put(3, new PointF(view.getWidth(), view.getHeight()));
         return outlinePoints;
     }
 
