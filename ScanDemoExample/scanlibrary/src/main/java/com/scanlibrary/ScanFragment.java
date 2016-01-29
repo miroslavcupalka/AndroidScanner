@@ -194,11 +194,26 @@ public class ScanFragment extends Fragment {
     /**
      * Called From activity
      */
-    public void onBackPressed() {
+    public boolean onBackPressed() {
+        if (isCropMode) {
+            viewHolder.sourceImageView.setImageBitmap(documentBitmap);
+            viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
+            viewHolder.scaleImageView.setImageBitmap(documentBitmap);
+            viewHolder.scaleImageView.setVisibility(View.VISIBLE);
+            viewHolder.polygonView.setVisibility(View.GONE);
+
+            cropBtn.setVisible(true);
+            rotateBtn.setVisible(true);
+            isCropMode = false;
+            return false;
+        }
+
         releaseAllBitmaps();
         if (takenPhotoLocation != null) {
             removeFile(takenPhotoLocation);
         }
+
+        return true;
     }
 
     private void releaseAllBitmaps() {
