@@ -8,6 +8,13 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Surface;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 public class Utils {
 
     private static final String TAG = Utils.class.getSimpleName();
@@ -86,4 +93,28 @@ public class Utils {
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
+    public static boolean isStringEmpty(String value) {
+        return value == null || value.isEmpty();
+    }
+
+    public static String cropPathFromFullPath(String path) {
+        return path.substring(0, path.lastIndexOf(File.separator));
+    }
+
+    public static void copyFileUsingStream(File source, File dest) throws IOException {
+        InputStream is = null;
+        OutputStream os = null;
+        try {
+            is = new FileInputStream(source);
+            os = new FileOutputStream(dest);
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) > 0) {
+                os.write(buffer, 0, length);
+            }
+        } finally {
+            is.close();
+            os.close();
+        }
+    }
 }
