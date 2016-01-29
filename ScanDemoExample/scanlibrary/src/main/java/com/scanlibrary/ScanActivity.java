@@ -65,10 +65,13 @@ public class ScanActivity extends Activity {
     public void onBackPressed() {
         ScanFragment scanFragment = (ScanFragment) getFragmentManager().findFragmentByTag("scan_frag");
         if (scanFragment != null) {
-            scanFragment.onBackPressed();
+            boolean exit = scanFragment.onBackPressed();
+            if (exit) {
+                super.onBackPressed();
+            }
+        } else {
+            super.onBackPressed();
         }
-
-        super.onBackPressed();
     }
 
 
