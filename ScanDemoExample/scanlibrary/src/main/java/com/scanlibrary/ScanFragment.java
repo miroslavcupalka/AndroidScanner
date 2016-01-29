@@ -262,6 +262,13 @@ public class ScanFragment extends Fragment {
 
         } else {
             File scannedDocFile = createImageFile("scanned_doc");
+
+            try {
+                documentBitmap = ImageResizer.resizeImage(documentBitmap, 2048, 2048);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             saveBitmapToFile(scannedDocFile, documentBitmap);
             removeFile(takenPhotoLocation);
             releaseAllBitmaps();
