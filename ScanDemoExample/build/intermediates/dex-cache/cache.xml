@@ -9,17 +9,10 @@
         <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-17c37e4d74c16a2b8d488cc0c2d716655daf0c83.jar" />
     </item>
     <item
-        jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\jars\classes.jar"
-        jumboMode="false"
-        revision="23.0.2"
-        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
-        <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-66995c60b970d702830aa0605612c69aa1b9a355.jar" />
-    </item>
-    <item
         jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\ScanDemoExample\scanlibrary\unspecified\jars\classes.jar"
         jumboMode="false"
         revision="23.0.2"
-        sha1="9efc3ccbda2f3f19c17e9e702f17a08ed14ae910">
+        sha1="dd4e1444a939e1902fa793365ae3a7a73e0eccf1">
         <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-64d90915416580e77d24bb965361fe9e8c7cb330.jar" />
     </item>
     <item
@@ -30,11 +23,18 @@
         <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\support-annotations-21.0.3-34a57f82165fcc191123ae4d70b3d0379c72c265.jar" />
     </item>
     <item
-        jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\org.opencv\opencv-android\2.4.8\jars\classes.jar"
+        jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\jars\classes.jar"
         jumboMode="false"
         revision="23.0.2"
-        sha1="c50972f15e185c73d50fcef51f16d2392e80c87c">
-        <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-71888ee64d25fe4e3da35c070f827c43f1f9e178.jar" />
+        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
+        <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-66995c60b970d702830aa0605612c69aa1b9a355.jar" />
+    </item>
+    <item
+        jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\com.davemorrissey.labs\subsampling-scale-image-view\2.3.0\jars\classes.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="705ffc2c856ea563f08d87cc59e797eb37c69e3f">
+        <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-a4ac2123659a362aa8d67a4343a18538a740a075.jar" />
     </item>
     <item
         jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\jars\libs\internal_impl-21.0.3.jar"
@@ -44,11 +44,11 @@
         <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\internal_impl-21.0.3-88add6b1a8b650f07c625608257884906b95b511.jar" />
     </item>
     <item
-        jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\com.davemorrissey.labs\subsampling-scale-image-view\2.3.0\jars\classes.jar"
+        jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\org.opencv\opencv-android\2.4.8\jars\classes.jar"
         jumboMode="false"
         revision="23.0.2"
-        sha1="705ffc2c856ea563f08d87cc59e797eb37c69e3f">
-        <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-a4ac2123659a362aa8d67a4343a18538a740a075.jar" />
+        sha1="c50972f15e185c73d50fcef51f16d2392e80c87c">
+        <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-71888ee64d25fe4e3da35c070f827c43f1f9e178.jar" />
     </item>
 
 </items>

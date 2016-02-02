@@ -232,7 +232,14 @@ public class ScanFragment extends Fragment {
 
     private void updateViewsWithNewBitmap() {
         Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentBitmap;
-        tmp = ImageResizer.scaleBitmap(tmp, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        int width = viewHolder.sourceFrame.getWidth();
+        int height = viewHolder.sourceFrame.getHeight();
+        if (width <= 0 || height <= 0) {
+            width = 2048;
+            height = 2048;
+        }
+        
+        tmp = ImageResizer.scaleBitmap(tmp, width, height);
         viewHolder.sourceImageView.setImageBitmap(tmp);
         viewHolder.scaleImageView.setImageBitmap(tmp);
     }
@@ -291,31 +298,10 @@ public class ScanFragment extends Fragment {
         viewHolder.polygonView.setLayoutParams(layoutParams);
     }
 
-
     private void onRotateButtonClicked() {
-        Bitmap takenPhotoBitmapTmp = Utils.rotateBitmap(takenPhotoBitmap, -90);
-        takenPhotoBitmap.recycle();
-        takenPhotoBitmap = takenPhotoBitmapTmp;
-
-        Bitmap documentBitmapTmp = Utils.rotateBitmap(documentBitmap, -90);
-        documentBitmap.recycle();
-        documentBitmap = documentBitmapTmp;
-
-        if (documentColoredBitmap != null) {
-            Bitmap documentColoredBitmapTmp = Utils.rotateBitmap(documentColoredBitmap, -90);
-            documentColoredBitmap.recycle();
-            documentColoredBitmap = documentColoredBitmapTmp;
-        }
-
-        Bitmap scaledBitmap = ImageResizer.scaleBitmap(documentColoredBitmap != null ? documentColoredBitmap : documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
-        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
-        viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
-        viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
-        viewHolder.scaleImageView.setVisibility(View.VISIBLE);
-//        Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
-        points = getOutlinePoints(viewHolder.sourceFrame);
+        showProgressDialog();
+        new RotatingTask(takenPhotoBitmap, documentBitmap, documentColoredBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
-
 
     private void onDoneButtonClicked() {
         if (isCropMode) {
@@ -556,6 +542,19 @@ public class ScanFragment extends Fragment {
         viewHolder.polygonView.setVisibility(View.GONE);
     }
 
+    private void onRotatingTaskFinished(RotatingTaskResult rotatingTaskResult) {
+        takenPhotoBitmap = rotatingTaskResult.takenPhotoBitmap;
+        documentBitmap = rotatingTaskResult.documentBitmap;
+        documentColoredBitmap = rotatingTaskResult.documentColoredBitmap;
+
+        Bitmap scaledBitmap = ImageResizer.scaleBitmap(documentColoredBitmap != null ? documentColoredBitmap : documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
+        viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
+        viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
+        viewHolder.scaleImageView.setVisibility(View.VISIBLE);
+
+        points = getOutlinePoints(viewHolder.sourceFrame);
+    }
     // ===========================================================
     // Inner and Anonymous Classes
     // ===========================================================
@@ -602,6 +601,53 @@ public class ScanFragment extends Fragment {
             onDocumentFromBitmapTaskFinished(documentFromBitmapTaskResult);
             dismissDialog();
         }
+    }
+
+    private class RotatingTask extends AsyncTask<Void, Void, RotatingTaskResult> {
+
+        private final Bitmap takenPhotoBitmap;
+        private final Bitmap documentBitmap;
+        private final Bitmap documentColoredBitmap;
+
+        public RotatingTask(Bitmap takenPhotoBitmap, Bitmap documentBitmap, Bitmap documentColoredBitmap) {
+            this.takenPhotoBitmap = takenPhotoBitmap;
+            this.documentBitmap = documentBitmap;
+            this.documentColoredBitmap = documentColoredBitmap;
+        }
+
+        @Override
+        protected RotatingTaskResult doInBackground(Void... params) {
+            RotatingTaskResult result = new RotatingTaskResult();
+
+            result.takenPhotoBitmap = Utils.rotateBitmap(takenPhotoBitmap, -90);
+            takenPhotoBitmap.recycle();
+
+            result.documentBitmap = Utils.rotateBitmap(documentBitmap, -90);
+            documentBitmap.recycle();
+
+            if (documentColoredBitmap != null) {
+                result.documentColoredBitmap = Utils.rotateBitmap(documentColoredBitmap, -90);
+                documentColoredBitmap.recycle();
+            }
+
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(RotatingTaskResult rotatingTaskResult) {
+            onRotatingTaskFinished(rotatingTaskResult);
+            dismissDialog();
+        }
+    }
+
+
+    private static class RotatingTaskResult {
+
+        private Bitmap takenPhotoBitmap;
+        private Bitmap documentBitmap;
+        private Bitmap documentColoredBitmap;
+
     }
 
     private static class DocumentFromBitmapTaskResult {

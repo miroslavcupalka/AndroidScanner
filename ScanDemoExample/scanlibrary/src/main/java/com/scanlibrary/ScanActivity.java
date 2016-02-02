@@ -12,7 +12,6 @@ import java.util.Locale;
 
 public class ScanActivity extends Activity {
 
-
     public static final String EXTRA_BRAND_IMG_RES = "title_img_res";
     public static final String EXTRA_TITLE = "title";
     public static final String EXTRA_LANGUAGE = "language";
