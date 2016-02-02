@@ -245,6 +245,7 @@ public class ScanUtils {
     }
 
     private static Mat bitmapToMat(Bitmap bitmap) {
+        System.gc();
         Mat image = new Mat();
         Bitmap bmp32 = bitmap.copy(Bitmap.Config.ARGB_8888, true);
         org.opencv.android.Utils.bitmapToMat(bmp32, image);
@@ -252,6 +253,7 @@ public class ScanUtils {
     }
 
     private static Bitmap matToBitmap(Mat mat) {
+        System.gc();
         String location = Environment.getExternalStorageDirectory().getAbsolutePath() + "/matToBitmap.png";
         Highgui.imwrite(location, mat);
         Bitmap bitmap = Utils.getBitmapFromLocation(location);

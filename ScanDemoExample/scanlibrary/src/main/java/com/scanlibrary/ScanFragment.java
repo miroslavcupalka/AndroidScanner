@@ -48,6 +48,10 @@ public class ScanFragment extends Fragment {
     private static final int TAKE_PHOTO_REQUEST_CODE = 815;
     private static final String SAVED_ARG_TAKEN_PHOTO_LOCATION = "taken_photo_loc";
 
+    private static final int MODE_NONE = 0;
+    private static final int MODE_BLACK_AND_WHITE = 1;
+    private static final int MODE_MAGIC = 2;
+
     // ===========================================================
     // Fields
     // ===========================================================
@@ -213,13 +217,13 @@ public class ScanFragment extends Fragment {
     // Methods
     // ===========================================================
     private void onMagicModeChosen() {
-        documentColoredBitmap = ScanUtils.getMagicColorBitmap(documentBitmap);
-        updateViewsWithNewBitmap();
+        showProgressDialog();
+        new ModeChangingTask(MODE_MAGIC, documentBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     private void onBlackAndWhiteModeChosen() {
-        documentColoredBitmap = ScanUtils.getGrayBitmap(documentBitmap);
-        updateViewsWithNewBitmap();
+        showProgressDialog();
+        new ModeChangingTask(MODE_BLACK_AND_WHITE, documentBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     private void onNoneModeChosen() {
@@ -238,7 +242,7 @@ public class ScanFragment extends Fragment {
             width = 2048;
             height = 2048;
         }
-        
+
         tmp = ImageResizer.scaleBitmap(tmp, width, height);
         viewHolder.sourceImageView.setImageBitmap(tmp);
         viewHolder.scaleImageView.setImageBitmap(tmp);
@@ -555,6 +559,13 @@ public class ScanFragment extends Fragment {
 
         points = getOutlinePoints(viewHolder.sourceFrame);
     }
+
+
+    private void onModeChangingTaskFinished(ModeChangingTaskResult modeChangingTaskResult) {
+        documentColoredBitmap = modeChangingTaskResult.bitmap;
+        updateViewsWithNewBitmap();
+    }
+
     // ===========================================================
     // Inner and Anonymous Classes
     // ===========================================================
@@ -639,6 +650,42 @@ public class ScanFragment extends Fragment {
             onRotatingTaskFinished(rotatingTaskResult);
             dismissDialog();
         }
+    }
+
+    private class ModeChangingTask extends AsyncTask<Void, Void, ModeChangingTaskResult> {
+
+        private final int mode;
+        private final Bitmap bitmap;
+
+        public ModeChangingTask(int mode, Bitmap bitmap) {
+            this.mode = mode;
+            this.bitmap = bitmap;
+        }
+
+        @Override
+        protected ModeChangingTaskResult doInBackground(Void... params) {
+            ModeChangingTaskResult result = new ModeChangingTaskResult();
+            result.mode = mode;
+
+            if (mode == MODE_MAGIC) {
+                result.bitmap = ScanUtils.getMagicColorBitmap(bitmap);
+            } else if (mode == MODE_BLACK_AND_WHITE) {
+                result.bitmap = ScanUtils.getGrayBitmap(bitmap);
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(ModeChangingTaskResult modeChangingTaskResult) {
+            onModeChangingTaskFinished(modeChangingTaskResult);
+            dismissDialog();
+        }
+    }
+
+    private static class ModeChangingTaskResult {
+        private int mode;
+        private Bitmap bitmap;
     }
 
 
