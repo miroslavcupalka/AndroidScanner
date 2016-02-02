@@ -1,6 +1,8 @@
 package com.scanlibrary;
 
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
+import android.graphics.RectF;
 
 import com.scanlibrary.ScalingUtilities.ScalingLogic;
 
@@ -42,7 +44,7 @@ public class ImageResizer {
             if (!(unscaledBitmap.getWidth() <= desiredWidth && unscaledBitmap.getHeight() <= desiredHeight)) {
                 // Part 2: Scale image
                 Bitmap scaledBitmap = ScalingUtilities.createScaledBitmap(unscaledBitmap, desiredWidth, desiredHeight, ScalingLogic.FIT);
-                unscaledBitmap.recycle();
+//                unscaledBitmap.recycle();
                 return scaledBitmap;
             } else {
 
@@ -52,6 +54,12 @@ public class ImageResizer {
         } catch (Throwable e) {
             throw new IOException(e);
         }
+    }
+
+    public static Bitmap scaleBitmap(Bitmap bitmap, int width, int height) {
+        Matrix m = new Matrix();
+        m.setRectToRect(new RectF(0, 0, bitmap.getWidth(), bitmap.getHeight()), new RectF(0, 0, width, height), Matrix.ScaleToFit.CENTER);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
     }
 
     // ===========================================================

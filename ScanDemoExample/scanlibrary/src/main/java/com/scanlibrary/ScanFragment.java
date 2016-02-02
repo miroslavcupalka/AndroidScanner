@@ -6,9 +6,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.graphics.PointF;
-import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -119,7 +117,7 @@ public class ScanFragment extends Fragment {
             viewHolder.sourceFrame.post(new Runnable() {
                 @Override
                 public void run() {
-                    Bitmap scaledBitmap = scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+                    Bitmap scaledBitmap = ImageResizer.scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
                     viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
 
                     Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
@@ -228,7 +226,7 @@ public class ScanFragment extends Fragment {
         rotateBtn.setVisible(false);
         isCropMode = true;
 
-        Bitmap scaledBitmap = scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        Bitmap scaledBitmap = ImageResizer.scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
         viewHolder.sourceImageView.setVisibility(View.VISIBLE);
         viewHolder.scaleImageView.setVisibility(View.GONE);
@@ -254,7 +252,7 @@ public class ScanFragment extends Fragment {
         documentBitmap.recycle();
         documentBitmap = documentBitmapTmp;
 
-        Bitmap scaledBitmap = scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        Bitmap scaledBitmap = ImageResizer.scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
         viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
         viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
@@ -272,7 +270,8 @@ public class ScanFragment extends Fragment {
 
             Map<Integer, PointF> points = viewHolder.polygonView.getPoints();
             if (isScanPointsValid(points)) {
-                new DocumentFromBitmapTask(takenPhotoBitmap, points, viewHolder.sourceImageView.getWidth(), viewHolder.sourceImageView.getHeight()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                upScalePoints(points, takenPhotoBitmap, viewHolder.sourceImageView.getWidth(), viewHolder.sourceImageView.getHeight());
+                new DocumentFromBitmapTask(takenPhotoBitmap, points).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             } else {
                 showErrorDialog();
             }
@@ -323,7 +322,7 @@ public class ScanFragment extends Fragment {
     private void onPhotoTaken() {
         takenPhotoBitmap = getBitmapFromLocation(takenPhotoLocation);
 
-        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap, null, 0, 0);
+        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap, null);
         documentFromBitmapTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
@@ -477,12 +476,6 @@ public class ScanFragment extends Fragment {
         return points.size() == 4;
     }
 
-    private Bitmap scaleBitmap(Bitmap bitmap, int width, int height) {
-        Matrix m = new Matrix();
-        m.setRectToRect(new RectF(0, 0, bitmap.getWidth(), bitmap.getHeight()), new RectF(0, 0, width, height), Matrix.ScaleToFit.CENTER);
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
-    }
-
 
     protected void showProgressDialog() {
         Bundle args = new Bundle();
@@ -501,7 +494,7 @@ public class ScanFragment extends Fragment {
         documentBitmap = result.bitmap;
         points = result.points;
 
-        Bitmap scaledBitmap = scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        Bitmap scaledBitmap = ImageResizer.scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
         viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
         viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
@@ -518,14 +511,10 @@ public class ScanFragment extends Fragment {
 
         private final Bitmap bitmap;
         private final Map<Integer, PointF> points;
-        private final int scaledImgHeight;
-        private final int scaledImgWidth;
 
-        public DocumentFromBitmapTask(Bitmap bitmap, Map<Integer, PointF> points, int scaledImgWidth, int scaledImgHeight) {
+        public DocumentFromBitmapTask(Bitmap bitmap, Map<Integer, PointF> points) {
             this.bitmap = bitmap;
             this.points = points;
-            this.scaledImgHeight = scaledImgHeight;
-            this.scaledImgWidth = scaledImgWidth;
         }
 
         @Override
@@ -540,17 +529,16 @@ public class ScanFragment extends Fragment {
 
             if (points != null) {
                 result.points = points;
-                upScalePoints(points, bitmap, scaledImgWidth, scaledImgHeight);
                 result.bitmap = cropDocumentFromBitmap(bitmap, points);
             } else {
                 try {
-                    Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 300, 300);
+                    Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 400, 400);
                     result.points = getEdgePoints(scaledBmp);
-                    result.bitmap = cropDocumentFromBitmap(scaledBmp, result.points);
+                    upScalePoints(result.points, bitmap, scaledBmp.getWidth(), scaledBmp.getHeight());
+                    result.bitmap = cropDocumentFromBitmap(bitmap, result.points);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException("Error happen while cropping image");
                 }
-
             }
 
             return result;

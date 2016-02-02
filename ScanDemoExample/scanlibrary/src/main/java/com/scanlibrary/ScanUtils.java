@@ -103,7 +103,6 @@ public class ScanUtils {
 //        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-1.png", gray0);
 //        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/blured-0.png", blurred);
 
-
         List<MatOfPoint> contours = new ArrayList<>();
 
         // find squares in every color plane of the image
