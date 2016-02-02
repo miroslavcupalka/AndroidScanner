@@ -67,6 +67,7 @@ public class ScanFragment extends Fragment {
     private Map<Integer, PointF> points;
 
     private boolean isCropMode = false;
+    private int currentMode = MODE_NONE;
 
     private int previousOreantation = -1;
 
@@ -189,6 +190,7 @@ public class ScanFragment extends Fragment {
             return true;
         } else if (item.getItemId() == R.id.mode_none) {
             if (!item.isChecked()) {
+                currentMode = MODE_NONE;
                 item.setChecked(true);
                 onNoneModeChosen();
             }
@@ -196,6 +198,7 @@ public class ScanFragment extends Fragment {
             return true;
         } else if (item.getItemId() == R.id.mode_black_and_white) {
             if (!item.isChecked()) {
+                currentMode = MODE_BLACK_AND_WHITE;
                 item.setChecked(true);
                 onBlackAndWhiteModeChosen();
             }
@@ -203,6 +206,7 @@ public class ScanFragment extends Fragment {
             return true;
         } else if (item.getItemId() == R.id.mode_magic) {
             if (!item.isChecked()) {
+                currentMode = MODE_MAGIC;
                 item.setChecked(true);
                 onMagicModeChosen();
             }
@@ -315,7 +319,7 @@ public class ScanFragment extends Fragment {
             Map<Integer, PointF> points = viewHolder.polygonView.getPoints();
             if (isScanPointsValid(points)) {
                 upScalePoints(points, takenPhotoBitmap, viewHolder.sourceImageView.getWidth(), viewHolder.sourceImageView.getHeight());
-                new DocumentFromBitmapTask(takenPhotoBitmap, points).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new DocumentFromBitmapTask(takenPhotoBitmap, points, currentMode).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             } else {
                 showErrorDialog();
             }
@@ -324,12 +328,6 @@ public class ScanFragment extends Fragment {
             File scannedDocFile = createImageFile("scanned_doc");
 
             Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentColoredBitmap;
-
-            try {
-                tmp = ImageResizer.resizeImage(tmp, 2048, 2048);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
 
             saveBitmapToFile(scannedDocFile, tmp);
             removeFile(takenPhotoLocation);
@@ -366,9 +364,15 @@ public class ScanFragment extends Fragment {
     }
 
     private void onPhotoTaken() {
-        takenPhotoBitmap = getBitmapFromLocation(takenPhotoLocation);
+        Bitmap takenPhotoBitmapTmp = getBitmapFromLocation(takenPhotoLocation);
+        try {
+            takenPhotoBitmap = ImageResizer.resizeImage(takenPhotoBitmapTmp, 2048, 2048);
+            takenPhotoBitmapTmp.recycle();
+        } catch (IOException e) {
+            throw new RuntimeException("Not able to resize image");
+        }
 
-        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap, null);
+        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap, null, currentMode);
         documentFromBitmapTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
@@ -535,9 +539,12 @@ public class ScanFragment extends Fragment {
 
     private void onDocumentFromBitmapTaskFinished(DocumentFromBitmapTaskResult result) {
         documentBitmap = result.bitmap;
+        documentColoredBitmap = result.coloredBitmap;
         points = result.points;
 
-        Bitmap scaledBitmap = ImageResizer.scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentBitmap;
+
+        Bitmap scaledBitmap = ImageResizer.scaleBitmap(tmp, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
         viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
         viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
@@ -574,8 +581,9 @@ public class ScanFragment extends Fragment {
 
         private final Bitmap bitmap;
         private final Map<Integer, PointF> points;
+        private int mode;
 
-        public DocumentFromBitmapTask(Bitmap bitmap, Map<Integer, PointF> points) {
+        public DocumentFromBitmapTask(Bitmap bitmap, Map<Integer, PointF> points, int mode) {
             this.bitmap = bitmap;
             this.points = points;
         }
@@ -602,6 +610,12 @@ public class ScanFragment extends Fragment {
                 } catch (IOException e) {
                     throw new RuntimeException("Error happen while cropping image");
                 }
+            }
+
+            if (mode == MODE_MAGIC) {
+                result.coloredBitmap = ScanUtils.getMagicColorBitmap(bitmap);
+            } else if (mode == MODE_BLACK_AND_WHITE) {
+                result.coloredBitmap = ScanUtils.getGrayBitmap(bitmap);
             }
 
             return result;
@@ -698,8 +712,9 @@ public class ScanFragment extends Fragment {
     }
 
     private static class DocumentFromBitmapTaskResult {
-        Bitmap bitmap;
-        Map<Integer, PointF> points;
+        private Bitmap bitmap;
+        private Bitmap coloredBitmap;
+        private Map<Integer, PointF> points;
     }
 
     private static class ViewHolder {
