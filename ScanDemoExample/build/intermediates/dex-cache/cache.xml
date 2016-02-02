@@ -2,13 +2,6 @@
 <items version="2" >
 
     <item
-        jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\jars\classes.jar"
-        jumboMode="false"
-        revision="23.0.2"
-        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
-        <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-66995c60b970d702830aa0605612c69aa1b9a355.jar" />
-    </item>
-    <item
         jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\org.opencv\opencv-android\2.4.8\jars\classes.jar"
         jumboMode="false"
         revision="23.0.2"
@@ -16,10 +9,17 @@
         <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-71888ee64d25fe4e3da35c070f827c43f1f9e178.jar" />
     </item>
     <item
+        jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\21.0.3\jars\classes.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="81d42bf983a8741f4888a6e333e454e4a5e0eeb7">
+        <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-17c37e4d74c16a2b8d488cc0c2d716655daf0c83.jar" />
+    </item>
+    <item
         jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\ScanDemoExample\scanlibrary\unspecified\jars\classes.jar"
         jumboMode="false"
         revision="23.0.2"
-        sha1="53b4d590e8dad0e1ba8a0537062155aba4bf3e47">
+        sha1="ffc512791db8ede6c7ef7708aea44321e2b55702">
         <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-64d90915416580e77d24bb965361fe9e8c7cb330.jar" />
     </item>
     <item
@@ -30,11 +30,11 @@
         <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-a4ac2123659a362aa8d67a4343a18538a740a075.jar" />
     </item>
     <item
-        jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\21.0.3\jars\classes.jar"
+        jar="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\jars\classes.jar"
         jumboMode="false"
         revision="23.0.2"
-        sha1="81d42bf983a8741f4888a6e333e454e4a5e0eeb7">
-        <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-17c37e4d74c16a2b8d488cc0c2d716655daf0c83.jar" />
+        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
+        <dex dex="D:\Android Workspace\AndroidDocumentScanner\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-66995c60b970d702830aa0605612c69aa1b9a355.jar" />
     </item>
     <item
         jar="D:\AndroidSDK\extras\android\m2repository\com\android\support\support-annotations\21.0.3\support-annotations-21.0.3.jar"

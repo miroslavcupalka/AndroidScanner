@@ -51,28 +51,57 @@ public class ScanUtils {
 
     //
     public static List<Point> getPoints(Bitmap bitmap) {
+        List<MatOfPoint> squares = findSquares(bitmap);
+        return findBiggestSquere(squares, bitmap);
+    }
+
+    public static List<Point> findBiggestSquere(List<MatOfPoint> squares, Bitmap image) {
+        double width = image.getWidth();
+        double height = image.getHeight();
+
+        double largest_area = -1;
+        int largest_contour_index = 0;
+        for (int i = 0; i < squares.size(); i++) {
+            double a = Imgproc.contourArea(squares.get(i), false);
+//                double a = contourArea(squares[i], false);
+            if (a > largest_area) {
+                largest_area = a;
+                largest_contour_index = i;
+            }
+        }
+
+        List<Point> points = new ArrayList<>();
+        if (squares.size() > 0) {
+            points = squares.get(largest_contour_index).toList();
+        } else {
+            points.add(new Point(0, 0));
+            points.add(new Point(width, 0));
+            points.add(new Point(0, height));
+            points.add(new Point(width, height));
+        }
+        return points;
+    }
+
+    public static List<MatOfPoint> findSquares(Bitmap bitmap) {
         Mat image = new Mat();
         Bitmap bmp32 = bitmap.copy(Bitmap.Config.ARGB_8888, true);
         org.opencv.android.Utils.bitmapToMat(bmp32, image);
 
-        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/mat.png", image);
+//        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/mat.png", image);
 
-        double width = image.size().width;
-        double height = image.size().height;
         Mat image_proc = image.clone(); // TODO check this
         List<MatOfPoint> squares = new ArrayList<>();
         // blur will enhance edge detection
         Mat blurred = image_proc.clone(); // TODO
 
-        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/blured.png", blurred);
-
+//        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/blured.png", blurred);
 
         Imgproc.medianBlur(image_proc, blurred, 9);
         Mat gray0 = new Mat(blurred.size(), CvType.CV_8U);
         Mat gray = new Mat();
 
-        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-1.png", gray0);
-        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/blured-0.png", blurred);
+//        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-1.png", gray0);
+//        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/blured-0.png", blurred);
 
 
         List<MatOfPoint> contours = new ArrayList<>();
@@ -84,8 +113,8 @@ public class ScanUtils {
             bluredList.add(blurred);
             List<Mat> grayList = new ArrayList<>(1);
             grayList.add(gray0);
-            Core.mixChannels(bluredList, grayList, new MatOfInt(0, 0));
-            Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-2.png", gray0);
+            Core.mixChannels(bluredList, grayList, new MatOfInt(ch));
+//            Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-2-" + c + ".png", gray0);
 //            mixChannels(&blurred, 1, &gray0, 1, ch, 1);
 
             // try several threshold levels
@@ -96,14 +125,15 @@ public class ScanUtils {
                 // Canny helps to catch squares with gradient shading
                 if (l == 0) {
                     Imgproc.Canny(gray0, gray, 10, 20, 3, false); // TODO
-                    Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-0.png", gray0);
+//                    Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-0-" + c + ".png", gray0);
 
 //                    Canny(gray0, gray, 10, 20, 3);
                     Imgproc.dilate(gray, gray, new Mat(), new Point(-1, -1), 0); // TODO
-                    Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-1.png", gray0);
+                    Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-1-" + c + ".png", gray0);
 //                    dilate(gray, gray, Mat(), Point(-1, -1));
                 } else {
-
+                    double val = (l + 1) * 255 / threshold_level;
+                    Core.compare(gray0, new Scalar(val), gray, Core.CMP_GE);
 
 //                    gray = gray0 >= (l + 1) * 255 / threshold_level; // TODO
                 }
@@ -111,8 +141,8 @@ public class ScanUtils {
                 // Find contours and store them in a list
                 Imgproc.findContours(gray, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
 
-                Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-2.png", gray);
-                Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-3.png", gray0);
+//                Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-2-" + c + ".png", gray);
+//                Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-3-" + c + ".png", gray0);
 
                 // Test contours
                 MatOfPoint2f approx = new MatOfPoint2f();
@@ -127,7 +157,6 @@ public class ScanUtils {
                     // Note: absolute value of an area is used because
                     // area may be positive or negative - in accordance with the
                     // contour orientation
-//                    new Mat(approx.size(),CvType.CV_8UC1)
 
                     double val1 = Math.abs(Imgproc.contourArea(approx));
 //                            fabs(contourArea(Mat(approx))) > 1000 &&
@@ -148,33 +177,8 @@ public class ScanUtils {
                     }
                 }
             }
-
-            double largest_area = -1;
-            int largest_contour_index = 0;
-            for (int i = 0; i < squares.size(); i++) {
-                double a = Imgproc.contourArea(squares.get(i), false);
-//                double a = contourArea(squares[i], false);
-                if (a > largest_area) {
-                    largest_area = a;
-                    largest_contour_index = i;
-                }
-            }
-
-            Log.d(LOG_TAG, "Scaning size() :" + squares.size());
-            List<Point> points = new ArrayList<>();
-            if (squares.size() > 0) {
-                points = squares.get(largest_contour_index).toList();
-            } else {
-                points.add(new Point(0, 0));
-                points.add(new Point(width, 0));
-                points.add(new Point(0, height));
-                points.add(new Point(width, height));
-            }
-
-            return points;
         }
-
-        return new ArrayList<>(0);
+        return squares;
     }
 
     public static double angle(Point pt1, Point pt2, Point pt0) {

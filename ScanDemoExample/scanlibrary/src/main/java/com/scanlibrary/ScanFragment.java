@@ -543,8 +543,14 @@ public class ScanFragment extends Fragment {
                 upScalePoints(points, bitmap, scaledImgWidth, scaledImgHeight);
                 result.bitmap = cropDocumentFromBitmap(bitmap, points);
             } else {
-                result.points = getEdgePoints(bitmap);
-                result.bitmap = cropDocumentFromBitmap(bitmap, result.points);
+                try {
+                    Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 300, 300);
+                    result.points = getEdgePoints(scaledBmp);
+                    result.bitmap = cropDocumentFromBitmap(scaledBmp, result.points);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
             }
 
             return result;
