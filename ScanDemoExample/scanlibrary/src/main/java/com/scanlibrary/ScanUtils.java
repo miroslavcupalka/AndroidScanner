@@ -55,6 +55,8 @@ public class ScanUtils {
         Bitmap bmp32 = bitmap.copy(Bitmap.Config.ARGB_8888, true);
         org.opencv.android.Utils.bitmapToMat(bmp32, image);
 
+        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/mat.png", image);
+
         double width = image.size().width;
         double height = image.size().height;
         Mat image_proc = image.clone(); // TODO check this
@@ -62,9 +64,16 @@ public class ScanUtils {
         // blur will enhance edge detection
         Mat blurred = image_proc.clone(); // TODO
 
+        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/blured.png", blurred);
+
+
         Imgproc.medianBlur(image_proc, blurred, 9);
         Mat gray0 = new Mat(blurred.size(), CvType.CV_8U);
         Mat gray = new Mat();
+
+        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-1.png", gray0);
+        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/blured-0.png", blurred);
+
 
         List<MatOfPoint> contours = new ArrayList<>();
 
@@ -75,8 +84,9 @@ public class ScanUtils {
             bluredList.add(blurred);
             List<Mat> grayList = new ArrayList<>(1);
             grayList.add(gray0);
-            Core.mixChannels(bluredList, grayList, new MatOfInt(ch));
-            Core.mixChannels(bluredList, grayList, new MatOfInt(ch));
+            Core.mixChannels(bluredList, grayList, new MatOfInt(0, 0));
+            Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-2.png", gray0);
+//            mixChannels(&blurred, 1, &gray0, 1, ch, 1);
 
             // try several threshold levels
             final int threshold_level = 2;
@@ -86,17 +96,23 @@ public class ScanUtils {
                 // Canny helps to catch squares with gradient shading
                 if (l == 0) {
                     Imgproc.Canny(gray0, gray, 10, 20, 3, false); // TODO
+                    Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-0.png", gray0);
+
 //                    Canny(gray0, gray, 10, 20, 3);
                     Imgproc.dilate(gray, gray, new Mat(), new Point(-1, -1), 0); // TODO
+                    Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-1.png", gray0);
 //                    dilate(gray, gray, Mat(), Point(-1, -1));
                 } else {
 
-                    gray = gray0;
+
 //                    gray = gray0 >= (l + 1) * 255 / threshold_level; // TODO
                 }
 
                 // Find contours and store them in a list
                 Imgproc.findContours(gray, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
+
+                Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-2.png", gray);
+                Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-3.png", gray0);
 
                 // Test contours
                 MatOfPoint2f approx = new MatOfPoint2f();
