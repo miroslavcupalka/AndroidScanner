@@ -26,6 +26,10 @@ public class ScanUtils {
     // Constants
     // ===========================================================
 
+    static {
+        System.loadLibrary("opencv_java");
+    }
+
     private static final String LOG_TAG = ScanUtils.class.getSimpleName();
 
     // ===========================================================
