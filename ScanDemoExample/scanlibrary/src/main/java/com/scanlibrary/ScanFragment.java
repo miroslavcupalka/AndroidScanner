@@ -58,6 +58,7 @@ public class ScanFragment extends Fragment {
     private String takenPhotoLocation;
     private Bitmap takenPhotoBitmap;
     private Bitmap documentBitmap;
+    private Bitmap documentColoredBitmap;
 
     private Map<Integer, PointF> points;
 
@@ -106,9 +107,8 @@ public class ScanFragment extends Fragment {
             takePhoto();
         } else {
             if (documentBitmap != null) {
-                viewHolder.sourceImageView.setImageBitmap(documentBitmap);
+                updateViewsWithNewBitmap();
                 viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
-                viewHolder.scaleImageView.setImageBitmap(documentBitmap);
                 viewHolder.scaleImageView.setVisibility(View.VISIBLE);
             }
         }
@@ -155,18 +155,18 @@ public class ScanFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
-    private MenuItem cropBtn;
-    private MenuItem rotateBtn;
-
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.scan_menu, menu);
 
-        cropBtn = menu.findItem(R.id.crop);
-        rotateBtn = menu.findItem(R.id.rotate);
+        MenuItem cropBtn = menu.findItem(R.id.crop);
+        MenuItem rotateBtn = menu.findItem(R.id.rotate);
+        MenuItem modeBtn = menu.findItem(R.id.colors);
 
         cropBtn.setVisible(!isCropMode);
         rotateBtn.setVisible(!isCropMode);
+        modeBtn.setVisible(!isCropMode);
+
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -183,27 +183,71 @@ public class ScanFragment extends Fragment {
         } else if (item.getItemId() == R.id.rotate) {
             onRotateButtonClicked();
             return true;
+        } else if (item.getItemId() == R.id.mode_none) {
+            if (!item.isChecked()) {
+                item.setChecked(true);
+                onNoneModeChosen();
+            }
+
+            return true;
+        } else if (item.getItemId() == R.id.mode_black_and_white) {
+            if (!item.isChecked()) {
+                item.setChecked(true);
+                onBlackAndWhiteModeChosen();
+            }
+
+            return true;
+        } else if (item.getItemId() == R.id.mode_magic) {
+            if (!item.isChecked()) {
+                item.setChecked(true);
+                onMagicModeChosen();
+            }
+
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
+
     // ===========================================================
     // Methods
     // ===========================================================
+    private void onMagicModeChosen() {
+        documentColoredBitmap = ScanUtils.getMagicColorBitmap(documentBitmap);
+        updateViewsWithNewBitmap();
+    }
+
+    private void onBlackAndWhiteModeChosen() {
+        documentColoredBitmap = ScanUtils.getGrayBitmap(documentBitmap);
+        updateViewsWithNewBitmap();
+    }
+
+    private void onNoneModeChosen() {
+        if (documentColoredBitmap != null) {
+            documentColoredBitmap.recycle();
+            documentColoredBitmap = null;
+        }
+        updateViewsWithNewBitmap();
+    }
+
+    private void updateViewsWithNewBitmap() {
+        Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentBitmap;
+        tmp = ImageResizer.scaleBitmap(tmp, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        viewHolder.sourceImageView.setImageBitmap(tmp);
+        viewHolder.scaleImageView.setImageBitmap(tmp);
+    }
 
     /**
      * Called From activity
      */
     public boolean onBackPressed() {
         if (isCropMode) {
-            viewHolder.sourceImageView.setImageBitmap(documentBitmap);
+            updateViewsWithNewBitmap();
             viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
-            viewHolder.scaleImageView.setImageBitmap(documentBitmap);
             viewHolder.scaleImageView.setVisibility(View.VISIBLE);
             viewHolder.polygonView.setVisibility(View.GONE);
 
-            cropBtn.setVisible(true);
-            rotateBtn.setVisible(true);
+            getActivity().invalidateOptionsMenu();
             isCropMode = false;
             return false;
         }
@@ -222,8 +266,7 @@ public class ScanFragment extends Fragment {
     }
 
     private void onCropButtonClicked() {
-        cropBtn.setVisible(false);
-        rotateBtn.setVisible(false);
+        getActivity().invalidateOptionsMenu();
         isCropMode = true;
 
         Bitmap scaledBitmap = ImageResizer.scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
@@ -258,7 +301,13 @@ public class ScanFragment extends Fragment {
         documentBitmap.recycle();
         documentBitmap = documentBitmapTmp;
 
-        Bitmap scaledBitmap = ImageResizer.scaleBitmap(documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        if (documentColoredBitmap != null) {
+            Bitmap documentColoredBitmapTmp = Utils.rotateBitmap(documentColoredBitmap, -90);
+            documentColoredBitmap.recycle();
+            documentColoredBitmap = documentColoredBitmapTmp;
+        }
+
+        Bitmap scaledBitmap = ImageResizer.scaleBitmap(documentColoredBitmap != null ? documentColoredBitmap : documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
         viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
         viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
@@ -271,8 +320,7 @@ public class ScanFragment extends Fragment {
     private void onDoneButtonClicked() {
         if (isCropMode) {
             isCropMode = false;
-            cropBtn.setVisible(true);
-            rotateBtn.setVisible(true);
+            getActivity().invalidateOptionsMenu();
 
             Map<Integer, PointF> points = viewHolder.polygonView.getPoints();
             if (isScanPointsValid(points)) {
@@ -285,13 +333,15 @@ public class ScanFragment extends Fragment {
         } else {
             File scannedDocFile = createImageFile("scanned_doc");
 
+            Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentColoredBitmap;
+
             try {
-                documentBitmap = ImageResizer.resizeImage(documentBitmap, 2048, 2048);
+                tmp = ImageResizer.resizeImage(tmp, 2048, 2048);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            saveBitmapToFile(scannedDocFile, documentBitmap);
+            saveBitmapToFile(scannedDocFile, tmp);
             removeFile(takenPhotoLocation);
             releaseAllBitmaps();
 
@@ -342,8 +392,7 @@ public class ScanFragment extends Fragment {
         float y3 = (points.get(2).y);
         float y4 = (points.get(3).y);
         Log.d("", "POints(" + x1 + "," + y1 + ")(" + x2 + "," + y2 + ")(" + x3 + "," + y3 + ")(" + x4 + "," + y4 + ")");
-        Bitmap _bitmap = ScanUtils.getScannedBitmap(bitmap, x1, y1, x2, y2, x3, y3, x4, y4);
-        return _bitmap;
+        return ScanUtils.getScannedBitmap(bitmap, x1, y1, x2, y2, x3, y3, x4, y4);
     }
 
     private static void upScalePoints(Map<Integer, PointF> points, Bitmap original, int scaledImgWidth, int scaledImgHeight) {

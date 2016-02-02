@@ -255,6 +255,26 @@ public class ScanUtils {
         if (file.exists()) file.delete();
         return bitmap;
     }
+
+    public static Bitmap getGrayBitmap(Bitmap bitmap) {
+        Mat mbgra = bitmapToMat(bitmap);
+        Mat dst = mbgra.clone();
+
+        Imgproc.cvtColor(mbgra, dst, Imgproc.COLOR_RGB2GRAY);
+
+        return matToBitmap(dst);
+    }
+
+    public static Bitmap getMagicColorBitmap(Bitmap bitmap) {
+        Mat mbgra = bitmapToMat(bitmap);
+        Mat dst = mbgra.clone();
+        // init our output image
+        float alpha = 1.9f;
+        float beta = -80;
+        dst.convertTo(dst, -1, alpha, beta);
+
+        return matToBitmap(dst);
+    }
     // ===========================================================
     // Methods for/from SuperClass/Interfaces
     // ===========================================================

@@ -14,6 +14,29 @@
         android:title="@string/crop"/>
 
     <item
+        android:id="@+id/colors"
+        android:icon="@drawable/ic_color_lens_white_24dp"
+        android:showAsAction="always"
+        android:title="@null">
+        <menu>
+            <group
+                android:id="@+id/mode"
+                android:checkableBehavior="single">
+                <item
+                    android:id="@+id/mode_none"
+                    android:checked="true"
+                    android:title="@string/mode_none"/>
+                <item
+                    android:id="@+id/mode_black_and_white"
+                    android:title="@string/mode_black_white"/>
+                <item
+                    android:id="@+id/mode_magic"
+                    android:title="@string/mode_magic"/>
+            </group>
+        </menu>
+    </item>
+
+    <item
         android:id="@+id/done"
         android:icon="@drawable/ic_done_white_24dp"
         android:showAsAction="always"
