@@ -234,14 +234,20 @@ public class ScanFragment extends Fragment {
         Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
         viewHolder.polygonView.setVisibility(View.VISIBLE);
 
-        points = getEdgePoints(tempBitmap);
+        Map<Integer, PointF> pointsToUse = null;
+        if (points == null) {
+            pointsToUse = getEdgePoints(tempBitmap);
+        } else {
+            pointsToUse = downScalePoints(points, takenPhotoBitmap, tempBitmap.getWidth(), tempBitmap.getHeight());
+        }
 
-        viewHolder.polygonView.setPoints(points);
+        viewHolder.polygonView.setPoints(pointsToUse);
         int padding = (int) getResources().getDimension(R.dimen.scanPadding);
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
         layoutParams.gravity = Gravity.CENTER;
         viewHolder.polygonView.setLayoutParams(layoutParams);
     }
+
 
     private void onRotateButtonClicked() {
         Bitmap takenPhotoBitmapTmp = Utils.rotateBitmap(takenPhotoBitmap, -90);
@@ -356,20 +362,18 @@ public class ScanFragment extends Fragment {
         points.get(3).y = (points.get(3).y) * yRatio;
     }
 
-    private static void downScalePoints(Map<Integer, PointF> points, Bitmap original, int targetImgWidth, int targetImgHeight) {
+    private static Map<Integer, PointF> downScalePoints(Map<Integer, PointF> points, Bitmap original, int targetImgWidth, int targetImgHeight) {
         int width = original.getWidth();
         int height = original.getHeight();
         float xRatio = (float) width / targetImgWidth;
         float yRatio = (float) height / targetImgHeight;
 
-        points.get(0).x = (points.get(0).x) / xRatio;
-        points.get(1).x = (points.get(1).x) / xRatio;
-        points.get(2).x = (points.get(2).x) / xRatio;
-        points.get(3).x = (points.get(3).x) / xRatio;
-        points.get(0).y = (points.get(0).y) / yRatio;
-        points.get(1).y = (points.get(1).y) / yRatio;
-        points.get(2).y = (points.get(2).y) / yRatio;
-        points.get(3).y = (points.get(3).y) / yRatio;
+        Map<Integer, PointF> scaledPoints = new HashMap<>(4);
+        scaledPoints.put(0, new PointF((points.get(0).x) / xRatio, (points.get(0).y) / yRatio));
+        scaledPoints.put(1, new PointF((points.get(1).x) / xRatio, (points.get(1).y) / yRatio));
+        scaledPoints.put(2, new PointF((points.get(2).x) / xRatio, (points.get(2).y) / yRatio));
+        scaledPoints.put(3, new PointF((points.get(3).x) / xRatio, (points.get(3).y) / yRatio));
+        return scaledPoints;
     }
 
     private void takePhoto() {
