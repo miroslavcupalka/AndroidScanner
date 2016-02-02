@@ -28,6 +28,8 @@ import android.widget.Toast;
 
 import com.davemorrissey.labs.subscaleview.ScaleImageView;
 
+import org.opencv.core.Point;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -413,23 +415,32 @@ public class ScanFragment extends Fragment {
     }
 
     private static List<PointF> getContourEdgePoints(Bitmap tempBitmap) {
-        float[] points = ScanActivity.getPoints(tempBitmap);
-        float x1 = points[0];
-        float x2 = points[1];
-        float x3 = points[2];
-        float x4 = points[3];
+//        float[] points = ScanActivity.getPoints(tempBitmap);
+//        float x1 = points[0];
+//        float x2 = points[1];
+//        float x3 = points[2];
+//        float x4 = points[3];
+//
+//        float y1 = points[4];
+//        float y2 = points[5];
+//        float y3 = points[6];
+//        float y4 = points[7];
+//
+//        List<PointF> pointFs = new ArrayList<>();
+//        pointFs.add(new PointF(x1, y1));
+//        pointFs.add(new PointF(x2, y2));
+//        pointFs.add(new PointF(x3, y3));
+//        pointFs.add(new PointF(x4, y4));
+//        return pointFs;
+        List<Point> points = ScanUtils.getPoints(tempBitmap);
 
-        float y1 = points[4];
-        float y2 = points[5];
-        float y3 = points[6];
-        float y4 = points[7];
+        List<PointF> p = new ArrayList<>();
+        p.add(new PointF((float) points.get(0).x, (float) points.get(0).y));
+        p.add(new PointF((float) points.get(1).x, (float) points.get(1).y));
+        p.add(new PointF((float) points.get(2).x, (float) points.get(2).y));
+        p.add(new PointF((float) points.get(3).x, (float) points.get(3).y));
 
-        List<PointF> pointFs = new ArrayList<>();
-        pointFs.add(new PointF(x1, y1));
-        pointFs.add(new PointF(x2, y2));
-        pointFs.add(new PointF(x3, y3));
-        pointFs.add(new PointF(x4, y4));
-        return pointFs;
+        return p;
     }
 
     private static Map<Integer, PointF> getOutlinePoints(Bitmap tempBitmap) {
