@@ -3,22 +3,20 @@ package com.scanlibrary;
 
 import android.graphics.Bitmap;
 import android.os.Environment;
-import android.util.Log;
 
 import org.opencv.core.Core;
-import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
-import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,7 +126,7 @@ public class ScanUtils {
 
 //                    Canny(gray0, gray, 10, 20, 3);
                     Imgproc.dilate(gray, gray, new Mat(), new Point(-1, -1), 0); // TODO
-                    Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-1-" + c + ".png", gray0);
+//                    Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-1-" + c + ".png", gray0);
 //                    dilate(gray, gray, Mat(), Point(-1, -1));
                 } else {
                     double val = (l + 1) * 255 / threshold_level;
@@ -180,6 +178,15 @@ public class ScanUtils {
         return squares;
     }
 
+    public static Bitmap getScannedBitmap(Bitmap bitmap, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+        Mat mbgra = bitmapToMat(bitmap);
+        // init our output image
+//        Mat mbgra (info.height, info.width, CV_8UC4, pixels);
+        Mat dst = scan(mbgra, x1, y1, x2, y2, x3, y3, x4, y4);
+        Bitmap result = matToBitmap(dst);
+        return result;
+    }
+
     public static double angle(Point pt1, Point pt2, Point pt0) {
         double dx1 = pt1.x - pt0.x;
         double dy1 = pt1.y - pt0.y;
@@ -189,56 +196,64 @@ public class ScanUtils {
         return (dx1 * dx2 + dy1 * dy2) / Math.sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2) + 1e-10);
     }
 
-    public static Bitmap test(Bitmap bitmap) {
+    private static Mat scan(Mat img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+
+        // define the destination image size:
+
+        float w1 = (float) Math.sqrt(Math.pow(x4 - x3, 2) + Math.pow(x4 - x3, 2));
+        float w2 = (float) Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(x2 - x1, 2));
+        float h1 = (float) Math.sqrt(Math.pow(y2 - y4, 2) + Math.pow(y2 - y4, 2));
+        float h2 = (float) Math.sqrt(Math.pow(y1 - y3, 2) + Math.pow(y1 - y3, 2));
+
+        float maxWidth = (w1 < w2) ? w1 : w2;
+        float maxHeight = (h1 < h2) ? h1 : h2;
+
+        Mat dst = Mat.zeros(new Size(maxWidth, maxHeight), CvType.CV_8UC3);
+//        Mat dst = Mat::zeros (maxHeight, maxWidth, CV_8UC3);
+
+        // corners of destination image with the sequence [tl, tr, bl, br]
+        List<Point> dst_pts = new ArrayList<>();
+        List<Point> img_pts = new ArrayList<>();
+//        vector<Point2f> dst_pts, img_pts;
+        dst_pts.add(new Point(0, 0));
+        dst_pts.add(new Point(maxWidth - 1, 0));
+        dst_pts.add(new Point(0, maxHeight - 1));
+        dst_pts.add(new Point(maxWidth - 1, maxHeight - 1));
+
+        img_pts.add(new Point(x1, y1));
+        img_pts.add(new Point(x2, y2));
+        img_pts.add(new Point(x3, y3));
+        img_pts.add(new Point(x4, y4));
+//        img_pts.add(computePoint(x2, y2));
+//        img_pts.add(computePoint(x3, y3));
+//        img_pts.add(computePoint(x4, y4));
+
+        // get transformation matrix
+        MatOfPoint2f source = new MatOfPoint2f(img_pts.get(0), img_pts.get(1), img_pts.get(2), img_pts.get(3));
+        MatOfPoint2f dest = new MatOfPoint2f(dst_pts.get(0), dst_pts.get(1), dst_pts.get(2), dst_pts.get(3));
+        Mat transmtx = Imgproc.getPerspectiveTransform(source, dest);
+//        Mat transmtx = getPerspectiveTransform(img_pts, dst_pts);
+        // apply perspective transformation
+        Imgproc.warpPerspective(img, dst, transmtx, dst.size());
+//        warpPerspective(img, dst, transmtx, dst.size());
+
+        return dst;
+    }
+
+    private static Mat bitmapToMat(Bitmap bitmap) {
         Mat image = new Mat();
         Bitmap bmp32 = bitmap.copy(Bitmap.Config.ARGB_8888, true);
         org.opencv.android.Utils.bitmapToMat(bmp32, image);
-
-        // Consider the image for processing
-//        Mat image = Highgui.imread("C:/Users/patiprad/Desktop/IwQY6.png", Imgproc.COLOR_BGR2GRAY);
-        Mat imageHSV = new Mat(image.size(), Core.DEPTH_MASK_8U);
-        Mat imageBlurr = new Mat(image.size(), Core.DEPTH_MASK_8U);
-        Mat imageA = new Mat(image.size(), Core.DEPTH_MASK_ALL);
-        Imgproc.cvtColor(image, imageHSV, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.GaussianBlur(imageHSV, imageBlurr, new Size(5, 5), 0);
-        Imgproc.adaptiveThreshold(imageBlurr, imageA, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 7, 5);
-
-        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/test1.png", image);
-
-        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-        Imgproc.findContours(imageA, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
-        Imgproc.drawContours(imageBlurr, contours, 1, new Scalar(0, 0, 255));
-        for (int i = 0; i < contours.size(); i++) {
-//            System.out.println(Imgproc.contourArea(contours.get(i)));
-            if (Imgproc.contourArea(contours.get(i)) > 50) {
-                Rect rect = Imgproc.boundingRect(contours.get(i));
-                System.out.println(rect.height);
-                if (rect.height > 28) {
-                    //System.out.println(rect.x +","+rect.y+","+rect.height+","+rect.width);
-                    Core.rectangle(image, new Point(rect.x, rect.y), new Point(rect.x + rect.width, rect.y + rect.height), new Scalar(0, 0, 255));
-                }
-            }
-        }
-
-        Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/test2.png", image);
-
-        return mapToBitmap(image);
-
+        return image;
     }
 
-    private static Bitmap mapToBitmap(Mat mat) {
-        Bitmap bmp = null;
-
-        Mat tmp = new Mat();
-        try {
-            //Imgproc.cvtColor(seedsImage, tmp, Imgproc.COLOR_RGB2BGRA);
-            Imgproc.cvtColor(mat, tmp, Imgproc.COLOR_GRAY2RGBA, 4);
-            bmp = Bitmap.createBitmap(tmp.cols(), tmp.rows(), Bitmap.Config.ARGB_8888);
-            org.opencv.android.Utils.matToBitmap(tmp, bmp);
-        } catch (CvException e) {
-            Log.d("Exception", e.getMessage());
-        }
-        return bmp;
+    private static Bitmap matToBitmap(Mat mat) {
+        String location = Environment.getExternalStorageDirectory().getAbsolutePath() + "/matToBitmap.png";
+        Highgui.imwrite(location, mat);
+        Bitmap bitmap = Utils.getBitmapFromLocation(location);
+        File file = new File(location);
+        if (file.exists()) file.delete();
+        return bitmap;
     }
     // ===========================================================
     // Methods for/from SuperClass/Interfaces

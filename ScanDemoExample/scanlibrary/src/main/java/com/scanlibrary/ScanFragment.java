@@ -342,7 +342,7 @@ public class ScanFragment extends Fragment {
         float y3 = (points.get(2).y);
         float y4 = (points.get(3).y);
         Log.d("", "POints(" + x1 + "," + y1 + ")(" + x2 + "," + y2 + ")(" + x3 + "," + y3 + ")(" + x4 + "," + y4 + ")");
-        Bitmap _bitmap = ScanActivity.getScannedBitmap(bitmap, x1, y1, x2, y2, x3, y3, x4, y4);
+        Bitmap _bitmap = ScanUtils.getScannedBitmap(bitmap, x1, y1, x2, y2, x3, y3, x4, y4);
         return _bitmap;
     }
 
