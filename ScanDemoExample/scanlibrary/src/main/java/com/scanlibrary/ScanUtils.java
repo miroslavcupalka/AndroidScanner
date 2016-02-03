@@ -125,10 +125,10 @@ public class ScanUtils {
                 // Use Canny instead of zero threshold level!
                 // Canny helps to catch squares with gradient shading
                 if (l == 0) {
-                    Imgproc.Canny(gray0, gray, 10, 20, 3, false); // TODO
-                    if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-0-" + c + ".png", gray0);
-                    Imgproc.dilate(gray, gray, new Mat(), new Point(-1, -1), 0); // TODO
-                    if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-1-" + c + ".png", gray0);
+                    Imgproc.Canny(gray0, gray, 10, 30, 3, true);
+                    if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-1-" + c + ".png", gray);
+                    Imgproc.dilate(gray, gray, new Mat(), new Point(-1, -1), 1);
+                    if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-2-" + c + ".png", gray);
                 } else {
                     double val = (l + 1) * 255 / threshold_level;
                     Core.compare(gray0, new Scalar(val), gray, Core.CMP_GE);
@@ -137,7 +137,7 @@ public class ScanUtils {
                 // Find contours and store them in a list
                 Imgproc.findContours(gray, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
 
-                if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-2-" + c + ".png", gray);
+                if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-4-" + c + ".png", gray);
                 if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-3-" + c + ".png", gray0);
 
                 // Test contours
