@@ -67,7 +67,7 @@ public class ScanFragment extends Fragment {
     private Map<Integer, PointF> points;
 
     private boolean isCropMode = false;
-    private int currentMode = MODE_NONE;
+    private int currentMode = MODE_MAGIC;
 
     private int previousOreantation = -1;
 

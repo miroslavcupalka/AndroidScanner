@@ -24,13 +24,13 @@
                 android:checkableBehavior="single">
                 <item
                     android:id="@+id/mode_none"
-                    android:checked="true"
                     android:title="@string/mode_none"/>
                 <item
                     android:id="@+id/mode_black_and_white"
                     android:title="@string/mode_black_white"/>
                 <item
                     android:id="@+id/mode_magic"
+                    android:checked="true"
                     android:title="@string/mode_magic"/>
             </group>
         </menu>
