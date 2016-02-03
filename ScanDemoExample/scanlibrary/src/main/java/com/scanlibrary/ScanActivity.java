@@ -5,14 +5,12 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 
 import java.util.Locale;
 
 public class ScanActivity extends Activity {
-
 
     public static final String EXTRA_BRAND_IMG_RES = "title_img_res";
     public static final String EXTRA_TITLE = "title";
@@ -74,20 +72,4 @@ public class ScanActivity extends Activity {
         }
     }
 
-
-    public static native Bitmap getScannedBitmap(Bitmap bitmap, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
-
-    public static native Bitmap getGrayBitmap(Bitmap bitmap);
-
-    public static native Bitmap getMagicColorBitmap(Bitmap bitmap);
-
-    public static native Bitmap getBWBitmap(Bitmap bitmap);
-
-    public static native float[] getPoints(Bitmap bitmap);
-
-
-    static {
-        System.loadLibrary("opencv_java");
-        System.loadLibrary("Scanner");
-    }
 }

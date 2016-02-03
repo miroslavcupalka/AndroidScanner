@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 
+
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.2"
@@ -27,8 +28,17 @@ android {
     }
 }
 
+
+repositories {
+    maven {
+        url 'https://raw.github.com/vRallev/mvn-repo/master/'
+    }
+}
+
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     //Library for Image View That have Ability to zoom...
     compile 'com.davemorrissey.labs:subsampling-scale-image-view:2.3.0'
+    compile 'org.opencv:opencv-android:2.4.8'
 }

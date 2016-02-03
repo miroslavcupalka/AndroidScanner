@@ -3,6 +3,7 @@ package com.scanlibrary;
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -22,6 +23,13 @@ public class Utils {
     private Utils() {
 
     }
+
+    public static Bitmap getBitmapFromLocation(String absLocation) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        return BitmapFactory.decodeFile(absLocation, options);
+    }
+
 
     public static int getScreenOrientation(Activity activity) {
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();

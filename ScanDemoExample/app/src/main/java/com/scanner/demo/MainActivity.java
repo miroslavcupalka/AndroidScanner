@@ -3,7 +3,6 @@ package com.scanner.demo;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.View;
@@ -11,6 +10,7 @@ import android.view.View.OnClickListener;
 import android.widget.ImageView;
 
 import com.scanlibrary.ScanActivity;
+import com.scanlibrary.Utils;
 
 
 public class MainActivity extends ActionBarActivity implements OnClickListener {
@@ -54,7 +54,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
         }
 
         if (scannedPhoto != null) {
-            viewHolder.image.setImageBitmap(getBitmapFromLocation(scannedPhoto));
+            viewHolder.image.setImageBitmap(Utils.getBitmapFromLocation(scannedPhoto));
         }
     }
 
@@ -82,7 +82,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CODE_SCAN && resultCode == Activity.RESULT_OK) {
             String imgPath = data.getStringExtra(ScanActivity.RESULT_IMAGE_PATH);
-            Bitmap bitmap = getBitmapFromLocation(imgPath);
+            Bitmap bitmap = Utils.getBitmapFromLocation(imgPath);
             viewHolder.image.setImageBitmap(bitmap);
 //            Uri uri = data.getExtras().getParcelable(ScanConstants.SCANNED_RESULT);
 //            Bitmap bitmap = null;
@@ -115,11 +115,6 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
         startActivityForResult(intent, REQUEST_CODE_SCAN);
     }
 
-    private Bitmap getBitmapFromLocation(String absLocation) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        return BitmapFactory.decodeFile(absLocation, options);
-    }
 
     // ===========================================================
     // Inner and Anonymous Classes

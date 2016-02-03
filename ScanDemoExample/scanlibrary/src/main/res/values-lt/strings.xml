@@ -5,4 +5,8 @@
     <string name="rotate">Pasukti</string>
     <string name="cant_crop">Negalima iškirpti dokumento, pakeiskite taškus</string>
     <string name="transforming">Transformuojama...</string>
+
+    <string name="mode_none">Joks</string>
+    <string name="mode_black_white">Juodai baltas</string>
+    <string name="mode_magic">Magiškas</string>
 </resources>
