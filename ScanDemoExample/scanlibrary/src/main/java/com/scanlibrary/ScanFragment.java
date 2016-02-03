@@ -295,26 +295,14 @@ public class ScanFragment extends Fragment {
         getActivity().invalidateOptionsMenu();
         isCropMode = true;
 
-        Bitmap scaledBitmap = ImageResizer.scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
-        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
-        viewHolder.sourceImageView.setVisibility(View.VISIBLE);
-        viewHolder.scaleImageView.setVisibility(View.GONE);
-
-        Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
-        viewHolder.polygonView.setVisibility(View.VISIBLE);
-
-        Map<Integer, PointF> pointsToUse = null;
         if (points == null) {
-            pointsToUse = getEdgePoints(tempBitmap);
-        } else {
-            pointsToUse = downScalePoints(points, takenPhotoBitmap, tempBitmap.getWidth(), tempBitmap.getHeight());
+            showProgressDialog();
+            new CropTask(takenPhotoBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            return;
         }
-
-        viewHolder.polygonView.setPoints(pointsToUse);
-        int padding = (int) getResources().getDimension(R.dimen.scanPadding);
-        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
-        layoutParams.gravity = Gravity.CENTER;
-        viewHolder.polygonView.setLayoutParams(layoutParams);
+        CropTaskResult result = new CropTaskResult();
+        result.points = points;
+        onCropTaskFinished(result);
     }
 
     private void onRotateButtonClicked() {
@@ -579,7 +567,7 @@ public class ScanFragment extends Fragment {
         viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
         viewHolder.scaleImageView.setVisibility(View.VISIBLE);
 
-        points = getOutlinePoints(viewHolder.sourceFrame);
+        points = null;
     }
 
 
@@ -589,6 +577,30 @@ public class ScanFragment extends Fragment {
         updateViewsWithNewBitmap();
     }
 
+    private void onCropTaskFinished(CropTaskResult cropTaskResult) {
+        points = cropTaskResult.points;
+
+        Bitmap scaledBitmap = ImageResizer.scaleBitmap(takenPhotoBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
+        viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
+        viewHolder.sourceImageView.setVisibility(View.VISIBLE);
+        viewHolder.scaleImageView.setVisibility(View.GONE);
+
+        Bitmap tempBitmap = ((BitmapDrawable) viewHolder.sourceImageView.getDrawable()).getBitmap();
+        viewHolder.polygonView.setVisibility(View.VISIBLE);
+
+        Map<Integer, PointF> pointsToUse = null;
+        if (points == null) {
+            pointsToUse = getEdgePoints(tempBitmap);
+        } else {
+            pointsToUse = downScalePoints(points, takenPhotoBitmap, tempBitmap.getWidth(), tempBitmap.getHeight());
+        }
+
+        viewHolder.polygonView.setPoints(pointsToUse);
+        int padding = (int) getResources().getDimension(R.dimen.scanPadding);
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
+        layoutParams.gravity = Gravity.CENTER;
+        viewHolder.polygonView.setLayoutParams(layoutParams);
+    }
     // ===========================================================
     // Inner and Anonymous Classes
     // ===========================================================
@@ -719,11 +731,43 @@ public class ScanFragment extends Fragment {
         }
     }
 
+    private class CropTask extends AsyncTask<Void, Void, CropTaskResult> {
+
+        private final Bitmap bitmap;
+
+        public CropTask(Bitmap bitmap) {
+            this.bitmap = bitmap;
+        }
+
+        @Override
+        protected CropTaskResult doInBackground(Void... params) {
+            CropTaskResult result = new CropTaskResult();
+            try {
+                Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 400, 400, false);
+                result.points = getEdgePoints(scaledBmp);
+                upScalePoints(result.points, bitmap, scaledBmp.getWidth(), scaledBmp.getHeight());
+                scaledBmp.recycle();
+            } catch (IOException e) {
+                throw new RuntimeException("Not able to resize image", e);
+            }
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(CropTaskResult cropTaskResult) {
+            onCropTaskFinished(cropTaskResult);
+            dismissDialog();
+        }
+    }
+
+    private static class CropTaskResult {
+        Map<Integer, PointF> points;
+    }
+
     private static class ModeChangingTaskResult {
         private int mode;
         private Bitmap bitmap;
     }
-
 
     private static class RotatingTaskResult {
 
