@@ -2,9 +2,9 @@ package com.scanlibrary;
 
 
 import android.graphics.Bitmap;
-import android.os.Environment;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfInt;
@@ -13,10 +13,8 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -253,13 +251,25 @@ public class ScanUtils {
     }
 
     private static Bitmap matToBitmap(Mat mat) {
-        System.gc();
-        String location = Environment.getExternalStorageDirectory().getAbsolutePath() + "/matToBitmap.png";
-        Highgui.imwrite(location, mat);
-        Bitmap bitmap = Utils.getBitmapFromLocation(location);
-        File file = new File(location);
-        if (file.exists()) file.delete();
-        return bitmap;
+//        System.gc();
+//        String location = Environment.getExternalStorageDirectory().getAbsolutePath() + "/matToBitmap.png";
+//        Highgui.imwrite(location, mat);
+//        Bitmap bitmap = Utils.getBitmapFromLocation(location);
+//        File file = new File(location);
+//        if (file.exists()) file.delete();
+//        return bitmap;
+
+//        Bitmap bmp = null;
+//        Mat tmp = new Mat(height, width, CvType.CV_8UC4, new Scalar(4));
+        try {
+            //Imgproc.cvtColor(seedsImage, tmp, Imgproc.COLOR_RGB2BGRA);
+//            Imgproc.cvtColor(seedsImage, tmp, Imgproc.COLOR_GRAY2RGBA, 4);
+            Bitmap bmp = Bitmap.createBitmap(mat.width(), mat.height(), Bitmap.Config.ARGB_8888);
+            org.opencv.android.Utils.matToBitmap(mat, bmp);
+            return bmp;
+        } catch (CvException e) {
+            throw new RuntimeException("Not able to convert mat to bitmap", e);
+        }
     }
 
     public static Bitmap getGrayBitmap(Bitmap bitmap) {
@@ -281,6 +291,64 @@ public class ScanUtils {
 
         return matToBitmap(dst);
     }
+
+//    public static void mat_to_bitmap(Mat src, boolean needPremultiplyAlpha) {
+//        int w = src.width(), h = src.height();
+//
+//        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
+//        Bitmap bmp = Bitmap.createBitmap(w, h, conf); // this creates a MUTABLE bitmap
+//
+//        Mat tmp = new Mat(src.height(), src.width(), CvType.CV_8UC4);
+//        //TODO find COLOR
+//        src.copyTo(tmp);
+//
+//
+//
+//
+//        try {
+//            CV_Assert(AndroidBitmap_getInfo(env, bitmap, & info) >= 0);
+//            CV_Assert(src.type() == CV_8UC1 || src.type() == CV_8UC3 || src.type() == CV_8UC4);
+//            CV_Assert(AndroidBitmap_lockPixels(env, bitmap, & pixels) >= 0);
+//            CV_Assert(pixels);
+//            if (info.format == ANDROID_BITMAP_FORMAT_RGBA_8888) {
+//                Mat tmp (info.height, info.width, CV_8UC4, pixels);
+//                if (src.type() == CV_8UC1) {
+//                    cvtColor(src, tmp, CV_GRAY2RGBA);
+//                } else if (src.type() == CV_8UC3) {
+//                    cvtColor(src, tmp, CV_RGB2RGBA);
+//                } else if (src.type() == CV_8UC4) {
+//                    if (needPremultiplyAlpha) {
+//                        cvtColor(src, tmp, COLOR_RGBA2mRGBA);
+//                    } else {
+//                        src.copyTo(tmp);
+//                    }
+//                }
+//            } else {
+//                // info.format == ANDROID_BITMAP_FORMAT_RGB_565
+//                Mat tmp (info.height, info.width, CV_8UC2, pixels);
+//                if (src.type() == CV_8UC1) {
+//                    cvtColor(src, tmp, CV_GRAY2BGR565);
+//                } else if (src.type() == CV_8UC3) {
+//                    cvtColor(src, tmp, CV_RGB2BGR565);
+//                } else if (src.type() == CV_8UC4) {
+//                    cvtColor(src, tmp, CV_RGBA2BGR565);
+//                }
+//            }
+//            AndroidBitmap_unlockPixels(env, bitmap);
+//            return bitmap;
+//        } catch (cv::Exception e){
+//            AndroidBitmap_unlockPixels(env, bitmap);
+//            jclass je = env -> FindClass("org/opencv/core/CvException");
+//            if (!je) je = env -> FindClass("java/lang/Exception");
+//            env -> ThrowNew(je, e.what());
+//            return bitmap;
+//        }catch(...){
+//            AndroidBitmap_unlockPixels(env, bitmap);
+//            jclass je = env -> FindClass("java/lang/Exception");
+//            env -> ThrowNew(je, "Unknown exception in JNI code {nMatToBitmap}");
+//            return bitmap;
+//        }
+//    }
     // ===========================================================
     // Methods for/from SuperClass/Interfaces
     // ===========================================================

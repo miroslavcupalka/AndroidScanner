@@ -330,13 +330,15 @@ public class ScanFragment extends Fragment {
 
             try {
                 tmp = ImageResizer.resizeImage(tmp, 2048, 2048);
-                documentBitmap.recycle();
-                if (documentColoredBitmap != null) documentColoredBitmap.recycle();
             } catch (IOException e) {
                 throw new RuntimeException("Not able to resize image");
             }
 
             saveBitmapToFile(scannedDocFile, tmp);
+
+            documentBitmap.recycle();
+            if (documentColoredBitmap != null) documentColoredBitmap.recycle();
+            
             removeFile(takenPhotoLocation);
             releaseAllBitmaps();
 
