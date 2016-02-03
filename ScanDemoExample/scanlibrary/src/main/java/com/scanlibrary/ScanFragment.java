@@ -336,9 +336,10 @@ public class ScanFragment extends Fragment {
 
             saveBitmapToFile(scannedDocFile, tmp);
 
+            takenPhotoBitmap.recycle();
             documentBitmap.recycle();
             if (documentColoredBitmap != null) documentColoredBitmap.recycle();
-            
+
             removeFile(takenPhotoLocation);
             releaseAllBitmaps();
 
