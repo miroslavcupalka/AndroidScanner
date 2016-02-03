@@ -167,6 +167,17 @@ public class ScanFragment extends Fragment {
         MenuItem cropBtn = menu.findItem(R.id.crop);
         MenuItem rotateBtn = menu.findItem(R.id.rotate);
         MenuItem modeBtn = menu.findItem(R.id.colors);
+        MenuItem modeNone = menu.findItem(R.id.mode_none);
+        MenuItem modeBlackAndWhite = menu.findItem(R.id.mode_black_and_white);
+        MenuItem modeMagic = menu.findItem(R.id.mode_magic);
+
+        if (currentMode == MODE_NONE) {
+            modeNone.setChecked(true);
+        } else if (currentMode == MODE_BLACK_AND_WHITE) {
+            modeBlackAndWhite.setChecked(true);
+        } else if (currentMode == MODE_MAGIC) {
+            modeMagic.setChecked(true);
+        }
 
         cropBtn.setVisible(!isCropMode);
         rotateBtn.setVisible(!isCropMode);
@@ -327,7 +338,15 @@ public class ScanFragment extends Fragment {
         } else {
             File scannedDocFile = createImageFile("scanned_doc");
 
-            Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentColoredBitmap;
+            Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentBitmap;
+
+            try {
+                tmp = ImageResizer.resizeImage(tmp, 2048, 2048);
+                documentBitmap.recycle();
+                if (documentColoredBitmap != null) documentColoredBitmap.recycle();
+            } catch (IOException e) {
+                throw new RuntimeException("Not able to resize image");
+            }
 
             saveBitmapToFile(scannedDocFile, tmp);
             removeFile(takenPhotoLocation);
@@ -364,13 +383,7 @@ public class ScanFragment extends Fragment {
     }
 
     private void onPhotoTaken() {
-        Bitmap takenPhotoBitmapTmp = getBitmapFromLocation(takenPhotoLocation);
-        try {
-            takenPhotoBitmap = ImageResizer.resizeImage(takenPhotoBitmapTmp, 2048, 2048);
-            takenPhotoBitmapTmp.recycle();
-        } catch (IOException e) {
-            throw new RuntimeException("Not able to resize image");
-        }
+        takenPhotoBitmap = getBitmapFromLocation(takenPhotoLocation);
 
         DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap, null, currentMode);
         documentFromBitmapTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -538,7 +551,9 @@ public class ScanFragment extends Fragment {
     }
 
     private void onDocumentFromBitmapTaskFinished(DocumentFromBitmapTaskResult result) {
+        if (documentBitmap != null) documentBitmap.recycle();
         documentBitmap = result.bitmap;
+        if (documentColoredBitmap != null) documentColoredBitmap.recycle();
         documentColoredBitmap = result.coloredBitmap;
         points = result.points;
 
@@ -569,6 +584,7 @@ public class ScanFragment extends Fragment {
 
 
     private void onModeChangingTaskFinished(ModeChangingTaskResult modeChangingTaskResult) {
+        if (documentColoredBitmap != null) documentColoredBitmap.recycle();
         documentColoredBitmap = modeChangingTaskResult.bitmap;
         updateViewsWithNewBitmap();
     }
@@ -586,6 +602,7 @@ public class ScanFragment extends Fragment {
         public DocumentFromBitmapTask(Bitmap bitmap, Map<Integer, PointF> points, int mode) {
             this.bitmap = bitmap;
             this.points = points;
+            this.mode = mode;
         }
 
         @Override
@@ -600,22 +617,28 @@ public class ScanFragment extends Fragment {
 
             if (points != null) {
                 result.points = points;
-                result.bitmap = cropDocumentFromBitmap(bitmap, points);
             } else {
                 try {
-                    Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 400, 400);
+                    Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 400, 400, false);
                     result.points = getEdgePoints(scaledBmp);
                     upScalePoints(result.points, bitmap, scaledBmp.getWidth(), scaledBmp.getHeight());
-                    result.bitmap = cropDocumentFromBitmap(bitmap, result.points);
+                    scaledBmp.recycle();
                 } catch (IOException e) {
-                    throw new RuntimeException("Error happen while cropping image");
+                    throw new RuntimeException("Not able to resize image", e);
                 }
             }
 
+            result.bitmap = cropDocumentFromBitmap(bitmap, result.points);
+            try {
+                result.bitmap = ImageResizer.resizeImage(result.bitmap, 2048, 2048, false);
+            } catch (IOException e) {
+                throw new RuntimeException("Not able to resize image", e);
+            }
+
             if (mode == MODE_MAGIC) {
-                result.coloredBitmap = ScanUtils.getMagicColorBitmap(bitmap);
+                result.coloredBitmap = ScanUtils.getMagicColorBitmap(result.bitmap);
             } else if (mode == MODE_BLACK_AND_WHITE) {
-                result.coloredBitmap = ScanUtils.getGrayBitmap(bitmap);
+                result.coloredBitmap = ScanUtils.getGrayBitmap(result.bitmap);
             }
 
             return result;
@@ -654,7 +677,6 @@ public class ScanFragment extends Fragment {
                 result.documentColoredBitmap = Utils.rotateBitmap(documentColoredBitmap, -90);
                 documentColoredBitmap.recycle();
             }
-
 
             return result;
         }

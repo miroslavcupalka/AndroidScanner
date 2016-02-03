@@ -35,16 +35,16 @@ public class ImageResizer {
     // ===========================================================
 
     /**
-     * @return full image path
+     * @return Resized Bitmap Image, If image was resized, old bitmap is recycled
      */
-    public static Bitmap resizeImage(Bitmap unscaledBitmap, int desiredWidth, int desiredHeight) throws IOException {
+    public static Bitmap resizeImage(Bitmap unscaledBitmap, int desiredWidth, int desiredHeight, boolean recycleOldOne) throws IOException {
 
         try {
             // Part 1: Decode image
             if (!(unscaledBitmap.getWidth() <= desiredWidth && unscaledBitmap.getHeight() <= desiredHeight)) {
                 // Part 2: Scale image
                 Bitmap scaledBitmap = ScalingUtilities.createScaledBitmap(unscaledBitmap, desiredWidth, desiredHeight, ScalingLogic.FIT);
-//                unscaledBitmap.recycle();
+                if (recycleOldOne) unscaledBitmap.recycle();
                 return scaledBitmap;
             } else {
 
@@ -54,6 +54,10 @@ public class ImageResizer {
         } catch (Throwable e) {
             throw new IOException(e);
         }
+    }
+
+    public static Bitmap resizeImage(Bitmap unscaledBitmap, int desiredWidth, int desiredHeight) throws IOException {
+        return resizeImage(unscaledBitmap, desiredWidth, desiredHeight, true);
     }
 
     public static Bitmap scaleBitmap(Bitmap bitmap, int width, int height) {
