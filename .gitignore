@@ -5,3 +5,8 @@ ScanDemoExample/local.properties
 ScanDemoExample/build/intermediates/dex-cache/cache.xml
 
 ScanDemoExample/build/intermediates/dex-cache/cache.xml
+ScanDemoExample/gradle.properties
+ScanDemoExample/scanlibrary/gradle.properties
+ScanDemoExample/scanlibrary/AndroidDocumentScanner.gpg
+ScanDemoExample/gradle.properties
+ScanDemoExample/build/intermediates/dex-cache/cache.xml
