@@ -11,7 +11,13 @@ ScanLibrary is an android document scanning library built on top of OpenCV, usin
         <img height="0" width="8px">
         <img width="23%"src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/c.png" alt="Palette" title="Palette"></img>
         <img height="0" width="8px">
-        <img width="23%" src="https://raw.githubusercontent.com/jhansireddy/andrejlukasevic/master/ScanDemoExample/screenshots/d.png" alt="Gray colors" title="Gray colorst"></img>
+        <img width="23%" src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/d.png" alt="Gray colors" title="Gray colorst"></img>
+        <img height="0" width="8px">
+        <img width="23%" src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/e.png" alt="Normal colors" title="Normal colors"></img>
+        <img height="0" width="8px">
+        <img width="23%" src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/f.png" alt="Rotated Image" title="Rotated Image"></img>
+        <img height="0" width="8px">
+        <img width="23%" src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/g.png" alt="Zoomed Image" title="Zoomed Image"></img>
 </div>
 
 # Using it in your project
