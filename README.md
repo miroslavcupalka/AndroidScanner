@@ -27,18 +27,17 @@ alt="Scan Video" width="40%" border="10" /></a>
 - If you are using android studio, add the dependency to your main app build.gradle this way: 
 
 ```	    
-- Add document_scan_lib.aar to lib folder of your project
-- Add dependency in your grandle file: compile(name:'document_scan_lib', ext:'aar') 
+-  compile 'com.github.andrejlukasevic:document-scanner:4.0.0'  // Check for latest version and replace version code
 ```
 - In your activity or fragment when you want to give an option of document scanning to user then:
 Start the scanlibrary ScanActivity, with this the app will go to library, below is the sample code snippet:
-Note: preference can be one of OPEN_CAMERA or OPEN_MEDIA or left empty, based on the passed preference the scan library decides to open camera or media or open the scan home page.
 ```java
-       int REQUEST_CODE = 99;
-       int preference = ScanConstants.OPEN_CAMERA;
-       Intent intent = new Intent(this, ScanActivity.class);
-       intent.putExtra(ScanConstants.OPEN_INTENT_PREFERENCE, preference);
-       startActivityForResult(intent, REQUEST_CODE);
+        Intent intent = new Intent(this, ScanActivity.class);
+        intent.putExtra(ScanActivity.EXTRA_BRAND_IMG_RES, R.drawable.ic_crop_white_24dp); // Set image for title icon - optional
+        intent.putExtra(ScanActivity.EXTRA_TITLE, "Crop Document"); // Set title in action Bar - optional
+        intent.putExtra(ScanActivity.EXTRA_ACTION_BAR_COLOR, R.color.green); // Set title color - optional
+        intent.putExtra(ScanActivity.EXTRA_LANGUAGE, "en"); // Set language - optional
+        startActivityForResult(intent, REQUEST_CODE_SCAN);
 ```
 
 - Once the scanning is done, the application is returned from scan library to main app, to retrieve the scanned image, add onActivityResult in your activity or fragment from where you have started startActivityForResult, below is the sample code snippet:
@@ -46,17 +45,12 @@ Note: preference can be one of OPEN_CAMERA or OPEN_MEDIA or left empty, based on
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-            Uri uri = data.getExtras().getParcelable(ScanConstants.SCANNED_RESULT);
-            Bitmap bitmap = null;
-            try {
-                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-                getContentResolver().delete(uri, null, null);
-                scannedImageView.setImageBitmap(bitmap);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        if (requestCode == REQUEST_CODE_SCAN && resultCode == Activity.RESULT_OK) {
+            String imgPath = data.getStringExtra(ScanActivity.RESULT_IMAGE_PATH);
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            Bitmap bitmap =  BitmapFactory.decodeFile(imgPath, options);
+            viewHolder.image.setImageBitmap(bitmap);
         }
     }
 ```
-- **IMPORTANT:** This project uses the OPENCV Framework. Download the newest version here 'http://opencv.org/.
