@@ -48,6 +48,7 @@ dependencies {
     compile 'com.davemorrissey.labs:subsampling-scale-image-view:2.3.0'
     compile 'com.android.support:appcompat-v7:25.4.0'
     compile(name: 'OpenCV-3.1.0-Android', ext: 'aar')
+    compile 'com.android.support:design:25.4.0'
 }
 
 //apply from: 'https://raw.github.com/andrejlukasevic/gradle-mvn-push/master/gradle-mvn-push.gradle'
