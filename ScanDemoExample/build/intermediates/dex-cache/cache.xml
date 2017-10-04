@@ -2,53 +2,53 @@
 <items version="2" >
 
     <item
-        jar="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\org.opencv\opencv-android\2.4.8\jars\classes.jar"
-        jumboMode="false"
-        revision="23.0.2"
-        sha1="c50972f15e185c73d50fcef51f16d2392e80c87c">
-        <dex dex="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-7247d29290bf4ee7366333c01efcad3df2984f0e.jar" />
-    </item>
-    <item
-        jar="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\21.0.3\jars\classes.jar"
-        jumboMode="false"
-        revision="23.0.2"
-        sha1="81d42bf983a8741f4888a6e333e454e4a5e0eeb7">
-        <dex dex="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-fd738882cb6e7af1483aabaa57e40ff669f4a32c.jar" />
-    </item>
-    <item
-        jar="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\jars\classes.jar"
-        jumboMode="false"
-        revision="23.0.2"
-        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
-        <dex dex="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-18e08a52f6d260346541ed89c2ca2fb967eb09a3.jar" />
-    </item>
-    <item
-        jar="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\jars\libs\internal_impl-21.0.3.jar"
-        jumboMode="false"
-        revision="23.0.2"
-        sha1="01ec05bfbafcc07646ba813000bf2ef11742dd03">
-        <dex dex="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\internal_impl-21.0.3-7950da5718ebba63f27e35efa034a6bfa23a8fdb.jar" />
-    </item>
-    <item
-        jar="C:\AndroidSDK\sdk\extras\android\m2repository\com\android\support\support-annotations\21.0.3\support-annotations-21.0.3.jar"
-        jumboMode="false"
-        revision="23.0.2"
-        sha1="4b74cefe1f0c1b819e7260c8627a14674e37fd35">
-        <dex dex="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\support-annotations-21.0.3-56620581d48b4e53a66e3c8171c6371387ca27a8.jar" />
-    </item>
-    <item
-        jar="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\com.davemorrissey.labs\subsampling-scale-image-view\2.3.0\jars\classes.jar"
-        jumboMode="false"
-        revision="23.0.2"
-        sha1="705ffc2c856ea563f08d87cc59e797eb37c69e3f">
-        <dex dex="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-2b2d8c28622750beef57881ff5c12e8d39abd1fc.jar" />
-    </item>
-    <item
-        jar="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\com.github.andrejlukasevic\document-scanner\4.0.0\jars\classes.jar"
+        jar="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\com.github.andrejlukasevic\document-scanner\4.0.0\jars\classes.jar"
         jumboMode="false"
         revision="23.0.2"
         sha1="fe31208fcca801be4092731930069df022919212">
-        <dex dex="C:\Workspace\AndroidStudio\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-5179a26c8b799a11e0564b298202e6011b816a71.jar" />
+        <dex dex="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-ebbe31403aaf3e74e0efb01a17aa012f38ef3cd7.jar" />
+    </item>
+    <item
+        jar="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\jars\libs\internal_impl-21.0.3.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="01ec05bfbafcc07646ba813000bf2ef11742dd03">
+        <dex dex="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\internal_impl-21.0.3-266fbc2fe98e6214d124f50b495c94326c4359aa.jar" />
+    </item>
+    <item
+        jar="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\org.opencv\opencv-android\2.4.8\jars\classes.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="c50972f15e185c73d50fcef51f16d2392e80c87c">
+        <dex dex="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-267e3abdccebe6e0e948d5fc97f1cdf03662ffdf.jar" />
+    </item>
+    <item
+        jar="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\com.davemorrissey.labs\subsampling-scale-image-view\2.3.0\jars\classes.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="705ffc2c856ea563f08d87cc59e797eb37c69e3f">
+        <dex dex="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-16ccbab08fb6fdfc06aa97c034377addf84cb7d3.jar" />
+    </item>
+    <item
+        jar="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\21.0.3\jars\classes.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="81d42bf983a8741f4888a6e333e454e4a5e0eeb7">
+        <dex dex="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-50eca6f58623a226440d877c5adf5030945c6dc1.jar" />
+    </item>
+    <item
+        jar="C:\Programs\Android\SDK\extras\android\m2repository\com\android\support\support-annotations\21.0.3\support-annotations-21.0.3.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="4b74cefe1f0c1b819e7260c8627a14674e37fd35">
+        <dex dex="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\support-annotations-21.0.3-57ee534a4894de47dcb5082e40c844877face43f.jar" />
+    </item>
+    <item
+        jar="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\jars\classes.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
+        <dex dex="C:\AndroidWorkspace\AndroidScannerDemo\ScanDemoExample\app\build\intermediates\pre-dexed\debug\classes-69a3cfa210030271971aa04522ed3d70969b4254.jar" />
     </item>
 
 </items>

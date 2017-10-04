@@ -329,7 +329,15 @@ public class ScanFragment extends Fragment {
             }
 
         } else {
-            File scannedDocFile = createImageFile("scanned_doc");
+
+            String givenPathToFile = getArguments().getString(EXTRA_IMAGE_LOCATION);
+            File scannedDocFile;
+            if (givenPathToFile != null) {
+                scannedDocFile = new File(givenPathToFile);
+            } else {
+                String fileName = new Date().getTime() + "-" + ID_INCREMENTER.incrementAndGet();
+                scannedDocFile = createImageFile(fileName);
+            }
 
             Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentBitmap;
 
@@ -431,16 +439,9 @@ public class ScanFragment extends Fragment {
     private void takePhoto() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-        String givenPathToFile = getArguments().getString(EXTRA_IMAGE_LOCATION);
-        File photoFile;
-        if (givenPathToFile != null) {
-            photoFile = new File(givenPathToFile);
-        } else {
-            String fileName = new Date().getTime() + "-" + ID_INCREMENTER.incrementAndGet();
-            photoFile = createImageFile(fileName);
-        }
-
+        File photoFile = createImageFile("takendocphoto");
         takenPhotoLocation = photoFile.getAbsolutePath();
+
         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
         startActivityForResult(takePictureIntent, TAKE_PHOTO_REQUEST_CODE);
     }
