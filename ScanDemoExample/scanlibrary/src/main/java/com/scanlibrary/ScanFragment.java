@@ -32,9 +32,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ScanFragment extends Fragment {
 
@@ -44,6 +46,7 @@ public class ScanFragment extends Fragment {
     // ===========================================================
 
     public static final String RESULT_IMAGE_PATH = "imgPath";
+    public static final String EXTRA_IMAGE_LOCATION = "img_location";
 
     private static final int TAKE_PHOTO_REQUEST_CODE = 815;
     private static final String SAVED_ARG_TAKEN_PHOTO_LOCATION = "taken_photo_loc";
@@ -51,6 +54,8 @@ public class ScanFragment extends Fragment {
     private static final int MODE_NONE = 0;
     private static final int MODE_BLACK_AND_WHITE = 1;
     private static final int MODE_MAGIC = 2;
+
+    private static final AtomicInteger ID_INCREMENTER = new AtomicInteger(0);
 
     // ===========================================================
     // Fields
@@ -426,9 +431,16 @@ public class ScanFragment extends Fragment {
     private void takePhoto() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-        File photoFile = createImageFile("takendocphoto");
-        takenPhotoLocation = photoFile.getAbsolutePath();
+        String givenPathToFile = getArguments().getString(EXTRA_IMAGE_LOCATION);
+        File photoFile;
+        if (givenPathToFile != null) {
+            photoFile = new File(givenPathToFile);
+        } else {
+            String fileName = new Date().getTime() + "-" + ID_INCREMENTER.incrementAndGet();
+            photoFile = createImageFile(fileName);
+        }
 
+        takenPhotoLocation = photoFile.getAbsolutePath();
         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
         startActivityForResult(takePictureIntent, TAKE_PHOTO_REQUEST_CODE);
     }
@@ -533,6 +545,7 @@ public class ScanFragment extends Fragment {
         args.putString(ProgressDialogFragment.EXTRA_MESSAGE, getString(R.string.transforming));
         progressDialogFragment = new ProgressDialogFragment();
         progressDialogFragment.setArguments(args);
+        progressDialogFragment.setCancelable(false);
         progressDialogFragment.show(getFragmentManager(), "progress_dialog");
     }
 
