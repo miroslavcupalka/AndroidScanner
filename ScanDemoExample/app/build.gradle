@@ -20,7 +20,7 @@ android {
 }
 
 dependencies {
-    compile project(':scanlibrary')
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:21.0.3'
+    compile 'com.github.andrejlukasevic:document-scanner:4.0.0' // Check for latest version
 }
