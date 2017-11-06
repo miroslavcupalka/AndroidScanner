@@ -1,10 +1,14 @@
 package com.scanlibrary;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.net.Uri;
+import android.os.Build;
+import android.support.v4.content.FileProvider;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Surface;
@@ -22,6 +26,14 @@ public class Utils {
 
     private Utils() {
 
+    }
+
+    public static Uri provideUriForFile(Context ctx, File file) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            return Uri.fromFile(file);
+        } else {
+            return FileProvider.getUriForFile(ctx, ctx.getPackageName() + ".provider", file);
+        }
     }
 
     public static Bitmap getBitmapFromLocation(String absLocation) {

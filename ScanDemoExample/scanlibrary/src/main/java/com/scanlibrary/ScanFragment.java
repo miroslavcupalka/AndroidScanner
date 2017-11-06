@@ -442,7 +442,9 @@ public class ScanFragment extends Fragment {
         File photoFile = createImageFile("takendocphoto");
         takenPhotoLocation = photoFile.getAbsolutePath();
 
-        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
+        Uri photoUri = Utils.provideUriForFile(getActivity().getApplication(),photoFile);
+        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+        takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivityForResult(takePictureIntent, TAKE_PHOTO_REQUEST_CODE);
     }
 
