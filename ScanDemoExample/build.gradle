@@ -16,8 +16,12 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
+        flatDir {
+            dirs 'libs'
+        }
         maven {
             url 'https://raw.github.com/vRallev/mvn-repo/master/'
         }
+        google()
     }
 }

@@ -453,6 +453,9 @@ public class ScanFragment extends Fragment {
         if (storageDir == null) {
             throw new RuntimeException("Not able to get to External storage");
         }
+        if (!storageDir.exists()) {
+            storageDir.mkdirs();
+        }
         File image = new File(storageDir, fileName + ".jpg");
 
         return image;
