@@ -23,14 +23,7 @@ public class PolygonView extends FrameLayout {
 
     protected Context context;
     private Paint paint;
-    private ImageView pointer1;
-    private ImageView pointer2;
-    private ImageView pointer3;
-    private ImageView pointer4;
-    private ImageView midPointer13;
-    private ImageView midPointer12;
-    private ImageView midPointer34;
-    private ImageView midPointer24;
+    private ImageView pointers[];
     private PolygonView polygonView;
 
     public PolygonView(Context context) {
@@ -53,36 +46,24 @@ public class PolygonView extends FrameLayout {
 
     private void init() {
         polygonView = this;
-        pointer1 = getImageView(0, 0);
-        pointer2 = getImageView(getWidth(), 0);
-        pointer3 = getImageView(0, getHeight());
-        pointer4 = getImageView(getWidth(), getHeight());
-        midPointer13 = getImageView(0, getHeight() / 2);
-        midPointer13.setOnTouchListener(new MidPointTouchListenerImpl(pointer1, pointer3));
-
-        midPointer12 = getImageView(0, getWidth() / 2);
-        midPointer12.setOnTouchListener(new MidPointTouchListenerImpl(pointer1, pointer2));
-
-        midPointer34 = getImageView(0, getHeight() / 2);
-        midPointer34.setOnTouchListener(new MidPointTouchListenerImpl(pointer3, pointer4));
-
-        midPointer24 = getImageView(0, getHeight() / 2);
-        midPointer24.setOnTouchListener(new MidPointTouchListenerImpl(pointer2, pointer4));
-
-        addView(pointer1);
-        addView(pointer2);
-        addView(midPointer13);
-        addView(midPointer12);
-        addView(midPointer34);
-        addView(midPointer24);
-        addView(pointer3);
-        addView(pointer4);
+        pointers = new ImageView[8];
+        // Our 8 points are in clockwise order:
+        //
+        // 0   1   2
+        // 7       3
+        // 6   5   4
+        //
+        // But the imported and exported corner points are in "Z" order:
+        //
+        // 0       1
+        //
+        // 2       3
+        //
+        for (int i = 0; i < pointers.length; i++) {
+            pointers[i] = getImageView();
+            addView(pointers[i]);
+        }
         initPaint();
-    }
-
-    @Override
-    protected void attachViewToParent(View child, int index, ViewGroup.LayoutParams params) {
-        super.attachViewToParent(child, index, params);
     }
 
     private void initPaint() {
@@ -92,19 +73,17 @@ public class PolygonView extends FrameLayout {
         paint.setAntiAlias(true);
     }
 
+    /** Export the four corner points in "Z" order */
     public Map<Integer, PointF> getPoints() {
-
         List<PointF> points = new ArrayList<PointF>();
-        points.add(new PointF(pointer1.getX(), pointer1.getY()));
-        points.add(new PointF(pointer2.getX(), pointer2.getY()));
-        points.add(new PointF(pointer3.getX(), pointer3.getY()));
-        points.add(new PointF(pointer4.getX(), pointer4.getY()));
-
+        points.add(new PointF(pointers[0].getX(), pointers[0].getY()));
+        points.add(new PointF(pointers[2].getX(), pointers[2].getY()));
+        points.add(new PointF(pointers[6].getX(), pointers[6].getY()));
+        points.add(new PointF(pointers[4].getX(), pointers[4].getY()));
         return getOrderedPoints(points);
     }
 
     public static Map<Integer, PointF> getOrderedPoints(List<PointF> points) {
-
         PointF centerPoint = new PointF();
         int size = points.size();
         for (PointF pointF : points) {
@@ -135,162 +114,168 @@ public class PolygonView extends FrameLayout {
     }
 
     private void setPointsCoordinates(Map<Integer, PointF> pointFMap) {
-        pointer1.setX(pointFMap.get(0).x);
-        pointer1.setY(pointFMap.get(0).y);
+        pointers[0].setX(pointFMap.get(0).x);
+        pointers[0].setY(pointFMap.get(0).y);
 
-        pointer2.setX(pointFMap.get(1).x);
-        pointer2.setY(pointFMap.get(1).y);
+        pointers[2].setX(pointFMap.get(1).x);
+        pointers[2].setY(pointFMap.get(1).y);
 
-        pointer3.setX(pointFMap.get(2).x);
-        pointer3.setY(pointFMap.get(2).y);
+        pointers[6].setX(pointFMap.get(2).x);
+        pointers[6].setY(pointFMap.get(2).y);
 
-        pointer4.setX(pointFMap.get(3).x);
-        pointer4.setY(pointFMap.get(3).y);
+        pointers[4].setX(pointFMap.get(3).x);
+        pointers[4].setY(pointFMap.get(3).y);
+    }
+
+    private float midX(View v) {
+        return v.getX() + v.getWidth() / 2.0f;
+    }
+
+    private float midY(View v) {
+        return v.getY() + v.getHeight() / 2.0f;
+    }
+
+    private void drawLine(Canvas canvas, View from, View to) {
+        canvas.drawLine(midX(from), midY(from), midX(to), midY(to), paint);
     }
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
         super.dispatchDraw(canvas);
-        canvas.drawLine(pointer1.getX() + (pointer1.getWidth() / 2), pointer1.getY() + (pointer1.getHeight() / 2), pointer3.getX() + (pointer3.getWidth() / 2), pointer3.getY() + (pointer3.getHeight() / 2), paint);
-        canvas.drawLine(pointer1.getX() + (pointer1.getWidth() / 2), pointer1.getY() + (pointer1.getHeight() / 2), pointer2.getX() + (pointer2.getWidth() / 2), pointer2.getY() + (pointer2.getHeight() / 2), paint);
-        canvas.drawLine(pointer2.getX() + (pointer2.getWidth() / 2), pointer2.getY() + (pointer2.getHeight() / 2), pointer4.getX() + (pointer4.getWidth() / 2), pointer4.getY() + (pointer4.getHeight() / 2), paint);
-        canvas.drawLine(pointer3.getX() + (pointer3.getWidth() / 2), pointer3.getY() + (pointer3.getHeight() / 2), pointer4.getX() + (pointer4.getWidth() / 2), pointer4.getY() + (pointer4.getHeight() / 2), paint);
-        midPointer13.setX(pointer3.getX() - ((pointer3.getX() - pointer1.getX()) / 2));
-        midPointer13.setY(pointer3.getY() - ((pointer3.getY() - pointer1.getY()) / 2));
-        midPointer24.setX(pointer4.getX() - ((pointer4.getX() - pointer2.getX()) / 2));
-        midPointer24.setY(pointer4.getY() - ((pointer4.getY() - pointer2.getY()) / 2));
-        midPointer34.setX(pointer4.getX() - ((pointer4.getX() - pointer3.getX()) / 2));
-        midPointer34.setY(pointer4.getY() - ((pointer4.getY() - pointer3.getY()) / 2));
-        midPointer12.setX(pointer2.getX() - ((pointer2.getX() - pointer1.getX()) / 2));
-        midPointer12.setY(pointer2.getY() - ((pointer2.getY() - pointer1.getY()) / 2));
+        drawLine(canvas, pointers[0], pointers[2]);
+        drawLine(canvas, pointers[2], pointers[4]);
+        drawLine(canvas, pointers[4], pointers[6]);
+        drawLine(canvas, pointers[6], pointers[0]);
+        setMidPointers();
     }
 
-    private ImageView getImageView(int x, int y) {
+    private void setMidPointers() {
+        for (int i = 1; i < 8; i += 2) {
+            int before = (i + 8 - 1) % 8;
+            int after = (i + 8 + 1) % 8;
+            pointers[i].setX(pointers[before].getX() - ((pointers[before].getX() - pointers[after].getX()) / 2));
+            pointers[i].setY(pointers[before].getY() - ((pointers[before].getY() - pointers[after].getY()) / 2));
+        }
+    }
+
+    private ImageView getImageView() {
         ImageView imageView = new ImageView(context);
         LayoutParams layoutParams = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         imageView.setLayoutParams(layoutParams);
         imageView.setImageResource(R.drawable.circle);
-        imageView.setX(x);
-        imageView.setY(y);
-        imageView.setOnTouchListener(new TouchListenerImpl());
         return imageView;
     }
 
-    private class MidPointTouchListenerImpl implements OnTouchListener {
-
-        PointF DownPT = new PointF(); // Record Mouse Position When Pressed Down
-        PointF StartPT = new PointF(); // Record Start Position of 'img'
-
-        private ImageView mainPointer1;
-        private ImageView mainPointer2;
-
-        public MidPointTouchListenerImpl(ImageView mainPointer1, ImageView mainPointer2) {
-            this.mainPointer1 = mainPointer1;
-            this.mainPointer2 = mainPointer2;
-        }
-
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            int eid = event.getAction();
-            switch (eid) {
-                case MotionEvent.ACTION_MOVE:
-                    PointF mv = new PointF(event.getX() - DownPT.x, event.getY() - DownPT.y);
-
-                    if (Math.abs(mainPointer1.getX() - mainPointer2.getX()) > Math.abs(mainPointer1.getY() - mainPointer2.getY())) {
-                        if (((mainPointer2.getY() + mv.y + v.getHeight() < polygonView.getHeight()) && (mainPointer2.getY() + mv.y > 0))) {
-                            v.setX((int) (StartPT.y + mv.y));
-                            StartPT = new PointF(v.getX(), v.getY());
-                            mainPointer2.setY((int) (mainPointer2.getY() + mv.y));
-                        }
-                        if (((mainPointer1.getY() + mv.y + v.getHeight() < polygonView.getHeight()) && (mainPointer1.getY() + mv.y > 0))) {
-                            v.setX((int) (StartPT.y + mv.y));
-                            StartPT = new PointF(v.getX(), v.getY());
-                            mainPointer1.setY((int) (mainPointer1.getY() + mv.y));
-                        }
-                    } else {
-                        if ((mainPointer2.getX() + mv.x + v.getWidth() < polygonView.getWidth()) && (mainPointer2.getX() + mv.x > 0)) {
-                            v.setX((int) (StartPT.x + mv.x));
-                            StartPT = new PointF(v.getX(), v.getY());
-                            mainPointer2.setX((int) (mainPointer2.getX() + mv.x));
-                        }
-                        if ((mainPointer1.getX() + mv.x + v.getWidth() < polygonView.getWidth()) && (mainPointer1.getX() + mv.x > 0)) {
-                            v.setX((int) (StartPT.x + mv.x));
-                            StartPT = new PointF(v.getX(), v.getY());
-                            mainPointer1.setX((int) (mainPointer1.getX() + mv.x));
-                        }
-                    }
-
-                    break;
-                case MotionEvent.ACTION_DOWN:
-                    DownPT.x = event.getX();
-                    DownPT.y = event.getY();
-                    StartPT = new PointF(v.getX(), v.getY());
-                    break;
-                case MotionEvent.ACTION_UP:
-                    int color = 0;
-                    if (isValidShape(getPoints())) {
-                        color = getResources().getColor(R.color.blue);
-                    } else {
-                        color = getResources().getColor(R.color.orange);
-                    }
-                    paint.setColor(color);
-                    break;
-                default:
-                    break;
+    private ImageView getWhichPointer(MotionEvent event) {
+        float minDiff = Float.MAX_VALUE;
+        ImageView best = null;
+        for (ImageView v : pointers) {
+            int FUZZ = v.getWidth();
+            float diffX = Math.abs(event.getX() - midX(v));
+            float diffY = Math.abs(event.getY() - midY(v));
+            if (diffX > FUZZ) continue;
+            if (diffY > FUZZ) continue;
+            float diff = (float) Math.hypot(diffX, diffY);
+            if (diff < minDiff) {
+                minDiff = diff;
+                best = v;
             }
-            polygonView.invalidate();
-            return true;
         }
+        return best;
+    }
+
+    private int getPointerNumber(ImageView view) {
+        for (int i = 0; i < pointers.length; i++) {
+            if (view == pointers[i]) return i;
+        }
+        return -1;
+    }
+
+    private PointF DownPT = new PointF(); // Record Mouse Position When Pressed Down
+    private PointF start[] = new PointF[8]; // Record starting pointer positions
+    private ImageView currentPointer;
+
+    // Return true if final position was adjusted to remain inside the parent view
+    private boolean movePointer(int num, float x, float y) {
+        float size = pointers[num].getWidth();
+        float unclippedX = start[num].x + x;
+        float unclippedY = start[num].y + y;
+        float newX = Math.max(0, Math.min(getWidth() - size, start[num].x + x));
+        float newY = Math.max(0, Math.min(getHeight() - size, start[num].y + y));
+        pointers[num].setX(newX);
+        pointers[num].setY(newY);
+        return newX != unclippedX || newY != unclippedY;
+    }
+
+    private void moveSidePointer(int num, float x, float y) {
+        int before = num - 1;
+        int after = (num + 1) % 8;
+        boolean c1 = movePointer(before, x, y);
+        boolean c2 = movePointer(num, x, y);
+        boolean c3 = movePointer(after, x, y);
+        if (c1) {
+            makeLine(before, num, after, x != 0);
+        } else if (c3) {
+            makeLine(after, num, before, x != 0);
+        }
+    }
+
+    private void makeLine(int anchor1, int anchor2, int movable, boolean changeX) {
+        if (changeX)
+            pointers[movable].setX(pointers[anchor2].getX() + pointers[anchor2].getX() - pointers[anchor1].getX());
+        else
+            pointers[movable].setY(pointers[anchor2].getY() + pointers[anchor2].getY() - pointers[anchor1].getY());
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        return super.onTouchEvent(event);
+        int eid = event.getAction();
+        switch (eid) {
+            case MotionEvent.ACTION_DOWN:
+                currentPointer = getWhichPointer(event);
+                if (currentPointer == null) break;
+                DownPT.x = event.getX();
+                DownPT.y = event.getY();
+                for (int i = 0; i < pointers.length; i++) {
+                    start[i] = new PointF(pointers[i].getX(), pointers[i].getY());
+                }
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (currentPointer == null) break;
+                float x = Math.max(event.getX(), 0);
+                x = Math.min(x, currentPointer.getWidth());
+                float y = Math.max(event.getY(), 0);
+                y = Math.min(y, currentPointer.getHeight());
+                x = event.getX();
+                y = event.getY();
+                PointF mv = new PointF(x - DownPT.x, y - DownPT.y);
+                int num = getPointerNumber(currentPointer);
+                if (num == 1 || num == 5) {
+                    moveSidePointer(num, 0, mv.y);
+                } else if (num == 3 || num == 7) {
+                    moveSidePointer(num, mv.x, 0);
+                } else {
+                    movePointer(num, mv.x, mv.y);
+                    setMidPointers();
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                int color = 0;
+                if (isValidShape(getPoints())) {
+                    color = getResources().getColor(R.color.blue);
+                } else {
+                    color = getResources().getColor(R.color.orange);
+                }
+                paint.setColor(color);
+                break;
+            default:
+                break;
+        }
+        polygonView.invalidate();
+        return true;
     }
 
     public static boolean isValidShape(Map<Integer, PointF> pointFMap) {
         return pointFMap.size() == 4;
     }
-
-    private class TouchListenerImpl implements OnTouchListener {
-
-        PointF DownPT = new PointF(); // Record Mouse Position When Pressed Down
-        PointF StartPT = new PointF(); // Record Start Position of 'img'
-
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            int eid = event.getAction();
-            switch (eid) {
-                case MotionEvent.ACTION_MOVE:
-                    PointF mv = new PointF(event.getX() - DownPT.x, event.getY() - DownPT.y);
-                    if (((StartPT.x + mv.x + v.getWidth()) < polygonView.getWidth() && (StartPT.y + mv.y + v.getHeight() < polygonView.getHeight())) && ((StartPT.x + mv.x) > 0 && StartPT.y + mv.y > 0)) {
-                        v.setX((int) (StartPT.x + mv.x));
-                        v.setY((int) (StartPT.y + mv.y));
-                        StartPT = new PointF(v.getX(), v.getY());
-                    }
-                    break;
-                case MotionEvent.ACTION_DOWN:
-                    DownPT.x = event.getX();
-                    DownPT.y = event.getY();
-                    StartPT = new PointF(v.getX(), v.getY());
-                    break;
-                case MotionEvent.ACTION_UP:
-                    int color = 0;
-                    if (isValidShape(getPoints())) {
-                        color = getResources().getColor(R.color.blue);
-                    } else {
-                        color = getResources().getColor(R.color.orange);
-                    }
-                    paint.setColor(color);
-                    break;
-                default:
-                    break;
-            }
-            polygonView.invalidate();
-            return true;
-        }
-
-    }
-
-
 }
