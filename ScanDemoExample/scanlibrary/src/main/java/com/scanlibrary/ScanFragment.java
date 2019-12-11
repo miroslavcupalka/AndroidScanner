@@ -387,7 +387,7 @@ public class ScanFragment extends Fragment {
     }
 
     private void onPhotoTaken() {
-        takenPhotoBitmap = getBitmapFromLocation(takenPhotoLocation);
+        takenPhotoBitmap = Utils.getBitmapFromLocation(takenPhotoLocation);
 
         DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap, null, currentMode);
         documentFromBitmapTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -468,12 +468,6 @@ public class ScanFragment extends Fragment {
         if (f.exists()) {
             f.delete();
         }
-    }
-
-    private Bitmap getBitmapFromLocation(String absLocation) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        return BitmapFactory.decodeFile(absLocation, options);
     }
 
     private static Map<Integer, PointF> getEdgePoints(Bitmap tempBitmap) {

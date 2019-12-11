@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
+import android.support.media.ExifInterface;
 import android.support.v4.content.FileProvider;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -39,7 +40,16 @@ public class Utils {
     public static Bitmap getBitmapFromLocation(String absLocation) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        return BitmapFactory.decodeFile(absLocation, options);
+        Bitmap original = BitmapFactory.decodeFile(absLocation, options);
+        try {
+            ExifInterface exif = new ExifInterface(absLocation);
+            int orientation = exif.getRotationDegrees();
+            Matrix matrix = new Matrix();
+            matrix.postRotate(orientation);
+            return Bitmap.createBitmap(original, 0, 0, original.getWidth(), original.getHeight(), matrix, true);
+        } catch (IOException e) {
+            return original;
+        }
     }
 
 
