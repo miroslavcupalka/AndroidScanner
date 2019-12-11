@@ -12,8 +12,7 @@ buildscript {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion "27.0.3"
+    compileSdkVersion 28
 
     splits {
         abi {
@@ -25,7 +24,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.scanner.demo"
+        applicationId "com.scanner.demo.dycode"
         minSdkVersion 14
         targetSdkVersion 25
         versionCode 1
@@ -44,5 +43,5 @@ dependencies {
     //Library for Image View That have Ability to zoom...
     implementation project(':scanlibrary')
     compile 'com.davemorrissey.labs:subsampling-scale-image-view:2.3.0'
-    compile 'com.android.support:appcompat-v7:25.4.0'
+    compile 'com.android.support:appcompat-v7:28.0.0'
 }

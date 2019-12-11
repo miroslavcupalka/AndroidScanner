@@ -2,8 +2,7 @@ apply plugin: 'com.android.library'
 
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion "27.0.3"
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 14
@@ -46,9 +45,9 @@ dependencies {
     compile(name: 'OpenCV-3.1.0-Android', ext: 'aar')
     //Library for Image View That have Ability to zoom...
     compile 'com.davemorrissey.labs:subsampling-scale-image-view:2.3.0'
-    compile 'com.android.support:appcompat-v7:25.4.0'
+    compile 'com.android.support:appcompat-v7:28.0.0'
     compile(name: 'OpenCV-3.1.0-Android', ext: 'aar')
-    compile 'com.android.support:design:25.4.0'
+    compile 'com.android.support:design:28.0.0'
 }
 
 //apply from: 'https://raw.github.com/andrejlukasevic/gradle-mvn-push/master/gradle-mvn-push.gradle'
