@@ -1,6 +1,8 @@
 package com.scanlibrary;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
@@ -11,7 +13,10 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -23,6 +28,12 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnNeverAskAgain;
+import permissions.dispatcher.OnPermissionDenied;
+import permissions.dispatcher.OnShowRationale;
+import permissions.dispatcher.PermissionRequest;
+import permissions.dispatcher.RuntimePermissions;
 
 import com.davemorrissey.labs.subscaleview.ScaleImageView;
 
@@ -38,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@RuntimePermissions
 public class ScanFragment extends Fragment {
 
 
@@ -114,7 +126,7 @@ public class ScanFragment extends Fragment {
         }
 
         if (takenPhotoLocation == null) {
-            takePhoto();
+            ScanFragmentPermissionsDispatcher.takePhotoWithPermissionCheck(this);
         } else {
             if (documentBitmap != null) {
                 updateViewsWithNewBitmap();
@@ -436,7 +448,8 @@ public class ScanFragment extends Fragment {
         return scaledPoints;
     }
 
-    private void takePhoto() {
+    @NeedsPermission(Manifest.permission.CAMERA)
+    void takePhoto() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
         File photoFile = createImageFile("takendocphoto");
@@ -446,6 +459,51 @@ public class ScanFragment extends Fragment {
         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
         takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivityForResult(takePictureIntent, TAKE_PHOTO_REQUEST_CODE);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        ScanFragmentPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
+    }
+    @OnShowRationale(Manifest.permission.CAMERA)
+    void showRationaleForCamera(PermissionRequest request) {
+        // NOTE: Show a rationale to explain why the permission is needed, e.g. with a dialog.
+        // Call proceed() or cancel() on the provided PermissionRequest to continue or abort
+        try {
+            showRationaleDialog(R.string.permission_camera_rationale, request);
+        } catch (Exception e) {
+            Log.e("ScanFragment", "ZZZ", e);
+        }
+    }
+
+    private void showRationaleDialog(@StringRes int messageResId, final PermissionRequest request) {
+        new AlertDialog.Builder(getActivity())
+                .setPositiveButton(R.string.button_allow, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(@NonNull DialogInterface dialog, int which) {
+                        request.proceed();
+                    }
+                })
+                .setNegativeButton(R.string.button_deny, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(@NonNull DialogInterface dialog, int which) {
+                        request.cancel();
+                    }
+                })
+                .setCancelable(false)
+                .setMessage(messageResId)
+                .show();
+    }
+
+    @OnPermissionDenied(Manifest.permission.CAMERA)
+    void onCameraDenied() {
+        getActivity().finish();
+    }
+
+    @OnNeverAskAgain(Manifest.permission.CAMERA)
+    void onCameraNeverAskAgain() {
+        getActivity().finish();
     }
 
     private File createImageFile(String fileName) {
@@ -550,8 +608,7 @@ public class ScanFragment extends Fragment {
     }
 
     protected void dismissDialog() {
-        ProgressDialogFragment progressDialogFragment = (ProgressDialogFragment) getActivity().getSupportFragmentManager().findFragmentByTag
-                ("progress_dialog");
+        ProgressDialogFragment progressDialogFragment = (ProgressDialogFragment) getActivity().getSupportFragmentManager().findFragmentByTag("progress_dialog");
         if (progressDialogFragment != null) progressDialogFragment.dismissAllowingStateLoss();
     }
 
@@ -618,6 +675,7 @@ public class ScanFragment extends Fragment {
         layoutParams.gravity = Gravity.CENTER;
         viewHolder.polygonView.setLayoutParams(layoutParams);
     }
+
     // ===========================================================
     // Inner and Anonymous Classes
     // ===========================================================
