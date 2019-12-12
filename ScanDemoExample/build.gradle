@@ -21,7 +21,7 @@ allprojects {
             dirs 'libs'
         }
         maven {
-            url 'https://raw.github.com/vRallev/mvn-repo/master/'
+            url  "http://dl.bintray.com/blazei/maven"
         }
     }
 }

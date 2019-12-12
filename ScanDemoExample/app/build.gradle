@@ -1,14 +1,3 @@
-buildscript {
-    repositories {
-        maven { url 'https://maven.fabric.io/public' }
-    }
-
-    dependencies {
-        classpath 'io.fabric.tools:gradle:1.+'
-    }
-}
-
-
 apply plugin: 'com.android.application'
 
 android {
@@ -25,7 +14,7 @@ android {
 
     defaultConfig {
         applicationId "com.scanner.demo.dycode"
-        minSdkVersion 14
+        minSdkVersion 15
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
