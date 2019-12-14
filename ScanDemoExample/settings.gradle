@@ -1,1 +1,1 @@
-include ':app', ':scanlibrary'
+include ':crop', ':demo', ':scanlibrary'

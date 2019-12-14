@@ -53,10 +53,10 @@ public class ScanUtils {
     //
     public static List<Point> getPoints(Bitmap bitmap) {
         List<MatOfPoint> squares = findSquares(bitmap);
-        return findBiggestSquere(squares, bitmap);
+        return findBiggestSquare(squares, bitmap);
     }
 
-    public static List<Point> findBiggestSquere(List<MatOfPoint> squares, Bitmap image) {
+    public static List<Point> findBiggestSquare(List<MatOfPoint> squares, Bitmap image) {
         double width = image.getWidth();
         double height = image.getHeight();
 

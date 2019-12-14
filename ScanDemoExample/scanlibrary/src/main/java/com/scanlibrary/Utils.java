@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
+import android.provider.MediaStore;
 import android.support.media.ExifInterface;
 import android.support.v4.content.FileProvider;
 import android.util.DisplayMetrics;
@@ -52,6 +53,21 @@ public class Utils {
         }
     }
 
+    public static Bitmap getBitmapFromUri(Context context, Uri uri) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap original = null;
+        try {
+            original = MediaStore.Images.Media.getBitmap(context.getContentResolver(), uri);
+            ExifInterface exif = new ExifInterface(context.getContentResolver().openInputStream(uri));
+            int orientation = exif.getRotationDegrees();
+            Matrix matrix = new Matrix();
+            matrix.postRotate(orientation);
+            return Bitmap.createBitmap(original, 0, 0, original.getWidth(), original.getHeight(), matrix, true);
+        } catch (IOException e) {
+            return original;
+        }
+    }
 
     public static int getScreenOrientation(Activity activity) {
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();

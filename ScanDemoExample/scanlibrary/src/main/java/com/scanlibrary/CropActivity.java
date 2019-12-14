@@ -11,14 +11,14 @@ import android.support.v7.widget.Toolbar;
 
 import java.util.Locale;
 
-public class ScanActivity extends AppCompatActivity {
+public class CropActivity extends AppCompatActivity {
 
     public static final String EXTRA_BRAND_IMG_RES = "title_img_res";
     public static final String EXTRA_TITLE = "title";
     public static final String EXTRA_LANGUAGE = "language";
     public static final String EXTRA_ACTION_BAR_COLOR = "ab_color";
-    public static final String EXTRA_IMAGE_LOCATION = "img_location";
-    public static final String RESULT_IMAGE_PATH = ScanFragment.RESULT_IMAGE_PATH;
+    public static final String EXTRA_IMAGE_URI = "image_uri";
+    public static final String RESULT_IMAGE_PATH = ScanFragment.RESULT_IMAGE_URI;
 
     Toolbar toolbar;
     @Override
@@ -55,7 +55,6 @@ public class ScanActivity extends AppCompatActivity {
             if (getIntent().getExtras() != null) {
                 args.putAll(getIntent().getExtras());
             }
-
             FragmentManager fragMan = getSupportFragmentManager();
             Fragment f = new ScanFragment();
             f.setArguments(args);
@@ -76,5 +75,4 @@ public class ScanActivity extends AppCompatActivity {
             super.onBackPressed();
         }
     }
-
 }

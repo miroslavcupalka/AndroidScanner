@@ -1,22 +1,15 @@
 package com.scanlibrary;
 
-import android.Manifest;
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
-import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -28,12 +21,6 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
-import permissions.dispatcher.NeedsPermission;
-import permissions.dispatcher.OnNeverAskAgain;
-import permissions.dispatcher.OnPermissionDenied;
-import permissions.dispatcher.OnShowRationale;
-import permissions.dispatcher.PermissionRequest;
-import permissions.dispatcher.RuntimePermissions;
 
 import com.davemorrissey.labs.subscaleview.ScaleImageView;
 
@@ -49,34 +36,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@RuntimePermissions
+import static com.scanlibrary.CropActivity.EXTRA_IMAGE_URI;
+
 public class ScanFragment extends Fragment {
-
-
-    // ===========================================================
-    // Constants
-    // ===========================================================
-
-    public static final String RESULT_IMAGE_PATH = "imgPath";
-    public static final String EXTRA_IMAGE_LOCATION = "img_location";
-
-    private static final int TAKE_PHOTO_REQUEST_CODE = 815;
+    public static final String RESULT_IMAGE_URI = "result_image_uri";
     private static final String SAVED_ARG_TAKEN_PHOTO_LOCATION = "taken_photo_loc";
-
     private static final int MODE_NONE = 0;
     private static final int MODE_BLACK_AND_WHITE = 1;
     private static final int MODE_MAGIC = 2;
-
-    private static final AtomicInteger ID_INCREMENTER = new AtomicInteger(0);
-
-    // ===========================================================
-    // Fields
-    // ===========================================================
 
     private ViewHolder viewHolder = new ViewHolder();
     private ProgressDialogFragment progressDialogFragment;
 
     private String takenPhotoLocation;
+    private Uri photoUri;
     private Bitmap takenPhotoBitmap;
     private Bitmap documentBitmap;
     private Bitmap documentColoredBitmap;
@@ -88,24 +61,13 @@ public class ScanFragment extends Fragment {
 
     private int previousOreantation = -1;
 
-    // ===========================================================
-    // Constructors
-    // ===========================================================
-
-    // ===========================================================
-    // Getters & Setters
-    // ===========================================================
-
-    // ===========================================================
-    // Methods for/from SuperClass/Interfaces
-    // ===========================================================
-
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
         setHasOptionsMenu(true);
+        photoUri = getArguments().getParcelable(EXTRA_IMAGE_URI);
+        onPhotoTaken();
     }
 
     @Override
@@ -126,7 +88,7 @@ public class ScanFragment extends Fragment {
         }
 
         if (takenPhotoLocation == null) {
-            ScanFragmentPermissionsDispatcher.takePhotoWithPermissionCheck(this);
+            // ZZZ ScanFragmentPermissionsDispatcher.takePhotoWithPermissionCheck(this);
         } else {
             if (documentBitmap != null) {
                 updateViewsWithNewBitmap();
@@ -155,19 +117,6 @@ public class ScanFragment extends Fragment {
                     viewHolder.polygonView.setPoints(points);
                 }
             });
-        }
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        if (requestCode == TAKE_PHOTO_REQUEST_CODE) {
-            if (resultCode == Activity.RESULT_OK) {
-                onPhotoTaken();
-            } else if (resultCode == Activity.RESULT_CANCELED) {
-                removeFile(takenPhotoLocation);
-                getActivity().setResult(Activity.RESULT_CANCELED);
-                getActivity().finish();
-            }
         }
     }
 
@@ -202,7 +151,6 @@ public class ScanFragment extends Fragment {
 
         super.onCreateOptionsMenu(menu, inflater);
     }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -244,10 +192,6 @@ public class ScanFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
-
-    // ===========================================================
-    // Methods
-    // ===========================================================
     private void onMagicModeChosen() {
         showProgressDialog();
         new ModeChangingTask(MODE_MAGIC, documentBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -342,19 +286,11 @@ public class ScanFragment extends Fragment {
 
         } else {
 
-            String givenPathToFile = getArguments().getString(EXTRA_IMAGE_LOCATION);
-            File scannedDocFile;
-            if (givenPathToFile != null) {
-                scannedDocFile = new File(givenPathToFile);
-            } else {
-                String fileName = new Date().getTime() + "-" + ID_INCREMENTER.incrementAndGet();
-                scannedDocFile = createImageFile(fileName);
-            }
-
+            File scannedDocFile = createImageFile("result");
             Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentBitmap;
 
             try {
-                tmp = ImageResizer.resizeImage(tmp, 2048, 2048);
+                tmp = ImageResizer.resizeImage(tmp, 2048, 2048); // ZZZ TODO: Why?!
             } catch (IOException e) {
                 throw new RuntimeException("Not able to resize image");
             }
@@ -369,7 +305,9 @@ public class ScanFragment extends Fragment {
             releaseAllBitmaps();
 
             Intent intent = new Intent();
-            intent.putExtra(RESULT_IMAGE_PATH, scannedDocFile.getAbsolutePath());
+            Uri resultUri = Utils.provideUriForFile(getActivity(), new File(scannedDocFile.getAbsolutePath()));
+            intent.putExtra(RESULT_IMAGE_URI, resultUri);
+            intent.setData(resultUri);
             getActivity().setResult(Activity.RESULT_OK, intent);
             getActivity().finish();
         }
@@ -399,9 +337,7 @@ public class ScanFragment extends Fragment {
     }
 
     private void onPhotoTaken() {
-        takenPhotoBitmap = Utils.getBitmapFromLocation(takenPhotoLocation);
-
-        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap, null, currentMode);
+        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(photoUri, null, currentMode);
         documentFromBitmapTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
@@ -448,80 +384,23 @@ public class ScanFragment extends Fragment {
         return scaledPoints;
     }
 
-    @NeedsPermission(Manifest.permission.CAMERA)
-    void takePhoto() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-        File photoFile = createImageFile("takendocphoto");
-        takenPhotoLocation = photoFile.getAbsolutePath();
-
-        Uri photoUri = Utils.provideUriForFile(getActivity().getApplication(),photoFile);
-        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
-        takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivityForResult(takePictureIntent, TAKE_PHOTO_REQUEST_CODE);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        ScanFragmentPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
-    }
-    @OnShowRationale(Manifest.permission.CAMERA)
-    void showRationaleForCamera(PermissionRequest request) {
-        // NOTE: Show a rationale to explain why the permission is needed, e.g. with a dialog.
-        // Call proceed() or cancel() on the provided PermissionRequest to continue or abort
-        try {
-            showRationaleDialog(R.string.permission_camera_rationale, request);
-        } catch (Exception e) {
-            Log.e("ScanFragment", "ZZZ", e);
-        }
-    }
-
-    private void showRationaleDialog(@StringRes int messageResId, final PermissionRequest request) {
-        new AlertDialog.Builder(getActivity())
-                .setPositiveButton(R.string.button_allow, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(@NonNull DialogInterface dialog, int which) {
-                        request.proceed();
-                    }
-                })
-                .setNegativeButton(R.string.button_deny, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(@NonNull DialogInterface dialog, int which) {
-                        request.cancel();
-                    }
-                })
-                .setCancelable(false)
-                .setMessage(messageResId)
-                .show();
-    }
-
-    @OnPermissionDenied(Manifest.permission.CAMERA)
-    void onCameraDenied() {
-        getActivity().finish();
-    }
-
-    @OnNeverAskAgain(Manifest.permission.CAMERA)
-    void onCameraNeverAskAgain() {
-        getActivity().finish();
-    }
-
     private File createImageFile(String fileName) {
-        File storageDir = getActivity().getExternalFilesDir("images");
-        if (storageDir == null) {
-            throw new RuntimeException("Not able to get to External storage");
+        File dir = new File(getActivity().getFilesDir(), "images");
+        if (!dir.exists()) dir.mkdir();
+        dir.setReadable(false, false);
+        dir.setReadable(true, true);
+        // Remove old files
+        for (File f : dir.listFiles()) {
+            // Remove the file if it is more than one day old
+            if (System.currentTimeMillis() - f.lastModified() > 1000 * 60 * 60 * 24) {
+                f.delete();
+            }
         }
-        if (!storageDir.exists()) {
-            storageDir.mkdirs();
-        }
-        File image = new File(storageDir, fileName + ".jpg");
-
-        return image;
+        return new File(dir, fileName + ".jpg");
     }
 
     private void removeFile(String absoluteLocation) {
         if (absoluteLocation == null) return;
-
         File f = new File(absoluteLocation);
         if (f.exists()) {
             f.delete();
@@ -535,31 +414,12 @@ public class ScanFragment extends Fragment {
     }
 
     private static List<PointF> getContourEdgePoints(Bitmap tempBitmap) {
-//        float[] points = ScanActivity.getPoints(tempBitmap);
-//        float x1 = points[0];
-//        float x2 = points[1];
-//        float x3 = points[2];
-//        float x4 = points[3];
-//
-//        float y1 = points[4];
-//        float y2 = points[5];
-//        float y3 = points[6];
-//        float y4 = points[7];
-//
-//        List<PointF> pointFs = new ArrayList<>();
-//        pointFs.add(new PointF(x1, y1));
-//        pointFs.add(new PointF(x2, y2));
-//        pointFs.add(new PointF(x3, y3));
-//        pointFs.add(new PointF(x4, y4));
-//        return pointFs;
         List<Point> points = ScanUtils.getPoints(tempBitmap);
-
         List<PointF> p = new ArrayList<>();
         p.add(new PointF((float) points.get(0).x, (float) points.get(0).y));
         p.add(new PointF((float) points.get(1).x, (float) points.get(1).y));
         p.add(new PointF((float) points.get(2).x, (float) points.get(2).y));
         p.add(new PointF((float) points.get(3).x, (float) points.get(3).y));
-
         return p;
     }
 
@@ -682,12 +542,19 @@ public class ScanFragment extends Fragment {
 
     private class DocumentFromBitmapTask extends AsyncTask<Void, Void, DocumentFromBitmapTaskResult> {
 
-        private final Bitmap bitmap;
+        private Bitmap bitmap;
+        private Uri bitmapUri;
         private final Map<Integer, PointF> points;
         private int mode;
 
         public DocumentFromBitmapTask(Bitmap bitmap, Map<Integer, PointF> points, int mode) {
             this.bitmap = bitmap;
+            this.points = points;
+            this.mode = mode;
+        }
+
+        public DocumentFromBitmapTask(Uri bitmapUri, Map<Integer, PointF> points, int mode) {
+            this.bitmapUri = bitmapUri;
             this.points = points;
             this.mode = mode;
         }
@@ -700,6 +567,9 @@ public class ScanFragment extends Fragment {
         @Override
         protected DocumentFromBitmapTaskResult doInBackground(Void... params) {
             System.gc();
+            if (bitmapUri != null && bitmap == null)
+                takenPhotoBitmap = bitmap = Utils.getBitmapFromUri(getActivity(), bitmapUri);
+
             DocumentFromBitmapTaskResult result = new DocumentFromBitmapTaskResult();
 
             if (points != null) {
@@ -717,7 +587,7 @@ public class ScanFragment extends Fragment {
 
             result.bitmap = cropDocumentFromBitmap(bitmap, result.points);
             try {
-                result.bitmap = ImageResizer.resizeImage(result.bitmap, 2048, 2048, false);
+                result.bitmap = ImageResizer.resizeImage(result.bitmap, 2048, 2048, false); // ZZZ TODO
             } catch (IOException e) {
                 throw new RuntimeException("Not able to resize image", e);
             }
@@ -845,11 +715,9 @@ public class ScanFragment extends Fragment {
     }
 
     private static class RotatingTaskResult {
-
         private Bitmap takenPhotoBitmap;
         private Bitmap documentBitmap;
         private Bitmap documentColoredBitmap;
-
     }
 
     private static class DocumentFromBitmapTaskResult {
@@ -871,6 +739,4 @@ public class ScanFragment extends Fragment {
             polygonView = (PolygonView) parent.findViewById(R.id.polygonView);
         }
     }
-
-
 }

@@ -6,13 +6,7 @@ import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 
 public class ProgressDialogFragment extends DialogFragment {
-    // ===========================================================
-    // Constants
-    // ===========================================================
     public static final String EXTRA_MESSAGE = "message";
-    // ===========================================================
-    // Methods for/from SuperClass/Interfaces
-    // ===========================================================
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -23,12 +17,4 @@ public class ProgressDialogFragment extends DialogFragment {
 
         return dialog;
     }
-
-    // ===========================================================
-    // Methods
-    // ===========================================================
-
-    // ===========================================================
-    // Inner and Anonymous Classes
-    // ===========================================================
 }
