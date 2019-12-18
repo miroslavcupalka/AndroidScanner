@@ -121,6 +121,7 @@ public class DemoScanActivity extends AppCompatActivity {
             if (bitmap != null) {
                 image.setImageBitmap(bitmap);
                 cropButton.setVisibility(View.VISIBLE);
+                MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "cropped-image", "Cropped Image");
             }
         }
     }
@@ -134,20 +135,20 @@ public class DemoScanActivity extends AppCompatActivity {
     @OnShowRationale(Manifest.permission.CAMERA)
     void showRationaleForCamera(final PermissionRequest request) {
         new AlertDialog.Builder(this)
-                .setPositiveButton(com.scanlibrary.R.string.button_allow, new DialogInterface.OnClickListener() {
+                .setPositiveButton(R.string.button_allow, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(@NonNull DialogInterface dialog, int which) {
                         request.proceed();
                     }
                 })
-                .setNegativeButton(com.scanlibrary.R.string.button_deny, new DialogInterface.OnClickListener() {
+                .setNegativeButton(R.string.button_deny, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(@NonNull DialogInterface dialog, int which) {
                         request.cancel();
                     }
                 })
                 .setCancelable(false)
-                .setMessage(com.scanlibrary.R.string.permission_camera_rationale)
+                .setMessage(R.string.permission_camera_rationale)
                 .show();
     }
 
@@ -168,7 +169,6 @@ public class DemoScanActivity extends AppCompatActivity {
 
     public void onCropButtonClicked(View view) {
         Intent intent = new Intent(this, CropActivity.class);
-        intent.putExtra(CropActivity.EXTRA_BRAND_IMG_RES, R.drawable.ic_crop_white_24dp);
         intent.putExtra(CropActivity.EXTRA_TITLE, "Crop Document");
         intent.putExtra(CropActivity.EXTRA_ACTION_BAR_COLOR, R.color.green);
         intent.putExtra(CropActivity.EXTRA_LANGUAGE, "en");

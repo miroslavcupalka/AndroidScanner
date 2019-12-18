@@ -7,11 +7,9 @@
     <string name="rotate">Rotate</string>
     <string name="cant_crop">Can\'t crop the image, change the points</string>
     <string name="transforming">Transforming...</string>
+    <string name="detecting">Detecting document...</string>
 
     <string name="mode_none">None</string>
     <string name="mode_black_white">Black &amp; White</string>
     <string name="mode_magic">Magic</string>
-    <string name="permission_camera_rationale">Camera permission is needed to continue</string>
-    <string name="button_allow">Allow</string>
-    <string name="button_deny">Deny</string>
 </resources>

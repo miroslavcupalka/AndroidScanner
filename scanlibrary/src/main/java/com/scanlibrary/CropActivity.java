@@ -8,27 +8,35 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 
 import java.util.Locale;
 
 public class CropActivity extends AppCompatActivity {
+    private static final String TAG = CropActivity.class.getSimpleName();
 
-    public static final String EXTRA_BRAND_IMG_RES = "title_img_res";
     public static final String EXTRA_TITLE = "title";
     public static final String EXTRA_LANGUAGE = "language";
     public static final String EXTRA_ACTION_BAR_COLOR = "ab_color";
     public static final String EXTRA_IMAGE_URI = "image_uri";
-    public static final String RESULT_IMAGE_PATH = ScanFragment.RESULT_IMAGE_URI;
 
-    Toolbar toolbar;
+    private Toolbar toolbar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                Log.e(TAG, "Uncaught exception:", e);
+                System.exit(1);
+            }
+        });
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan);
 
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        int titleImgRes = getIntent().getExtras().getInt(EXTRA_BRAND_IMG_RES);
         int abColor = getIntent().getExtras().getInt(EXTRA_ACTION_BAR_COLOR);
         String title = getIntent().getExtras().getString(EXTRA_TITLE);
         String locale = getIntent().getExtras().getString(EXTRA_LANGUAGE);
@@ -42,7 +50,6 @@ public class CropActivity extends AppCompatActivity {
         }
 
         if (title != null) getSupportActionBar().setTitle(title);
-        if (titleImgRes != 0) getSupportActionBar().setLogo(titleImgRes);
 
         if (abColor != 0) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(abColor)));
@@ -59,7 +66,7 @@ public class CropActivity extends AppCompatActivity {
             Fragment f = new ScanFragment();
             f.setArguments(args);
             FragmentTransaction fragTransaction = fragMan.beginTransaction();
-            fragTransaction.replace(R.id.contaner, f, "scan_frag").commit();
+            fragTransaction.replace(R.id.container, f, "scan_frag").commit();
         }
     }
 
