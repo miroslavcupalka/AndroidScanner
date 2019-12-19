@@ -5,6 +5,7 @@
     android:background="@android:color/darker_gray"
     android:orientation="vertical">
 
+    <!-- Don't use "wrap_content" as width or height or ScaleImageView won't work right -->
     <FrameLayout
         android:id="@+id/sourceFrame"
         android:layout_width="match_parent"
@@ -12,12 +13,11 @@
         android:layout_gravity="center"
         android:layout_margin="@dimen/scanPadding">
 
+        <!-- Make sure not to use "wrap_content" as width or height -->
         <com.davemorrissey.labs.subscaleview.ScaleImageView
             android:id="@+id/sourceImageView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:adjustViewBounds="true" />
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
     </FrameLayout>
 

@@ -28,17 +28,15 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    //Library for Image View That have Ability to zoom...
-    compile 'com.davemorrissey.labs:subsampling-scale-image-view:2.3.0'
+    // Library for Image View That have Ability to zoom...
+    implementation 'com.davemorrissey.labs:subsampling-scale-image-view:2.4.0'
     // From http://dl.bintray.com/steveliles/maven
-    compile 'org.opencv:opencv-android:3.2.0'
-    compile 'com.android.support:appcompat-v7:28.0.0'
-    compile 'com.android.support:design:28.0.0'
+    implementation 'org.opencv:opencv-android:3.2.0'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:design:28.0.0'
     implementation 'com.android.support:exifinterface:28.0.0'
-    compile 'com.github.hotchemi:permissionsdispatcher:3.0.1'
-    annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:3.0.1'
-    // compile 'com.github.hotchemi:permissionsdispatcher:2.3.0'
-    // annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:2.3.0'
-    compile 'com.android.support:support-v4:28.0.0'
-    compile 'com.android.support:support-v13:28.0.0'
+    // implementation 'com.github.hotchemi:permissionsdispatcher:3.0.1'
+    // annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:3.0.1'
+    implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support:support-v13:28.0.0'
 }

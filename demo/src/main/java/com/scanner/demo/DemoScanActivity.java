@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 
+import com.davemorrissey.labs.subscaleview.ScaleImageView;
 import com.scanlibrary.CropActivity;
 import com.scanlibrary.ScanFragment;
 import com.scanlibrary.Utils;
@@ -38,7 +39,7 @@ public class DemoScanActivity extends AppCompatActivity {
 
     private File photoFile;
     private Uri photoUri;
-    private ImageView image;
+    private ScaleImageView image;
     private String scannedPhoto;
     private Button cropButton;
     private Uri resultPhotoUri;
@@ -47,7 +48,7 @@ public class DemoScanActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        image = (ImageView) findViewById(R.id.image);
+        image = (ScaleImageView) findViewById(R.id.image);
 
         cropButton = findViewById(R.id.crop);
         if (savedInstanceState != null) {
@@ -59,7 +60,8 @@ public class DemoScanActivity extends AppCompatActivity {
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                System.out.printf("ZZZ uncaught exception in " + t + ": " + e);
+                Log.e(TAG, "Uncaught exception in " + t + ":", e);
+                System.exit(1);
             }
         });
     }

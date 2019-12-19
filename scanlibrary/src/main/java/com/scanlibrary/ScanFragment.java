@@ -5,12 +5,9 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.PointF;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Gravity;
@@ -21,7 +18,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.davemorrissey.labs.subscaleview.ScaleImageView;
@@ -51,11 +47,9 @@ public class ScanFragment extends Fragment {
     private PolygonView polygonView;
     private ProgressDialogFragment progressDialogFragment;
 
-    private String takenPhotoLocation;
     private Uri sourcePhotoUri;
     private Bitmap sourcePhotoBitmap;
     private Bitmap documentBitmap;
-    private Bitmap documentColoredBitmap;
 
     private Map<Integer, PointF> points;
 
@@ -70,6 +64,7 @@ public class ScanFragment extends Fragment {
         setRetainInstance(true);
         setHasOptionsMenu(true);
         sourcePhotoUri = getArguments().getParcelable(EXTRA_IMAGE_URI);
+        documentBitmap = sourcePhotoBitmap = Utils.getBitmapFromUri(getActivity(), sourcePhotoUri);
         onCropButtonClicked();
     }
 
@@ -82,6 +77,7 @@ public class ScanFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         sourceImageView = (ScaleImageView) view.findViewById(R.id.sourceImageView);
+        sourceImageView.setImageBitmap(sourcePhotoBitmap);
         sourceFrame = (FrameLayout) view.findViewById(R.id.sourceFrame);
         polygonView = (PolygonView) view.findViewById(R.id.polygonView);
         int currentOrientation = Utils.getScreenOrientation(getActivity());
@@ -166,25 +162,8 @@ public class ScanFragment extends Fragment {
     }
 
     private void onNoneModeChosen() {
-        if (documentColoredBitmap != null) {
-            documentColoredBitmap.recycle();
-            documentColoredBitmap = null;
-        }
-        updateViewsWithNewBitmap();
-    }
-
-    private void updateViewsWithNewBitmap() {
-        Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentBitmap;
-        int width = sourceFrame.getWidth();
-        int height = sourceFrame.getHeight();
-        if (width <= 0 || height <= 0) {
-            width = 2048;
-            height = 2048;
-        }
-        Log.i(TAG, "ZZZ converting " + tmp.getWidth() + " x " + tmp.getHeight() + " to " + width + " x " + height);
-        tmp = ImageResizer.scaleBitmap(tmp, width, height);
-        Log.i(TAG, "ZZZ final size: " + tmp.getWidth() + " x " + tmp.getHeight());
-        sourceImageView.setImageBitmap(tmp);
+        showProgressDialog();
+        new ModeChangingTask(MODE_NONE, documentBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     /**
@@ -192,7 +171,7 @@ public class ScanFragment extends Fragment {
      */
     public boolean onBackPressed() {
         if (isCropMode) {
-            updateViewsWithNewBitmap();
+            sourceImageView.setImageBitmap(documentBitmap);
             sourceImageView.setVisibility(View.VISIBLE);
             polygonView.setVisibility(View.GONE);
 
@@ -202,16 +181,15 @@ public class ScanFragment extends Fragment {
         }
 
         releaseAllBitmaps();
-        if (takenPhotoLocation != null) {
-            removeFile(takenPhotoLocation);
-        }
 
         return true;
     }
 
     private void releaseAllBitmaps() {
         if (sourcePhotoBitmap != null) sourcePhotoBitmap.recycle();
+        sourcePhotoBitmap = null;
         if (documentBitmap != null) documentBitmap.recycle();
+        documentBitmap = null;
     }
 
     private void onCropButtonClicked() {
@@ -233,7 +211,7 @@ public class ScanFragment extends Fragment {
 
     private void onRotateButtonClicked() {
         showProgressDialog();
-        new RotatingTask(sourcePhotoBitmap, documentBitmap, documentColoredBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new RotatingTask(sourcePhotoBitmap, documentBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     private void onDoneButtonClicked() {
@@ -243,28 +221,17 @@ public class ScanFragment extends Fragment {
 
             Map<Integer, PointF> points = polygonView.getPoints();
             if (isScanPointsValid(points)) {
-                upScalePoints(points, sourcePhotoBitmap, sourceImageView.getWidth(), sourceImageView.getHeight());
+                upScalePoints(points, sourcePhotoBitmap, sourceImageView.getSWidth(), sourceImageView.getSHeight());
                 new DocumentFromBitmapTask(sourcePhotoBitmap, points, currentMode).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             } else {
                 showErrorDialog();
             }
         } else {
             File scannedDocFile = createImageFile("result");
-            Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentBitmap;
-
-            try {
-                tmp = ImageResizer.resizeImage(tmp, 2048, 2048); // ZZZ TODO: Why?!
-            } catch (IOException e) {
-                throw new RuntimeException("Not able to resize image");
-            }
-
+            Bitmap tmp = documentBitmap;
+            // ZZZ TODO: Copy EXIF info
             saveBitmapToFile(scannedDocFile, tmp);
 
-            sourcePhotoBitmap.recycle();
-            documentBitmap.recycle();
-            if (documentColoredBitmap != null) documentColoredBitmap.recycle();
-
-            removeFile(takenPhotoLocation);
             releaseAllBitmaps();
 
             Intent intent = new Intent();
@@ -295,11 +262,6 @@ public class ScanFragment extends Fragment {
             }
         }
         return true;
-    }
-
-    private void onPhotoTaken() {
-        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(sourcePhotoUri, null, currentMode);
-        documentFromBitmapTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     private static Bitmap cropDocumentFromBitmap(Bitmap bitmap, Map<Integer, PointF> points) {
@@ -440,42 +402,15 @@ public class ScanFragment extends Fragment {
         if (progressDialogFragment != null) progressDialogFragment.dismissAllowingStateLoss();
     }
 
-    private void onDocumentFromBitmapTaskFinished(DocumentFromBitmapTaskResult result) {
-        if (documentBitmap != null) documentBitmap.recycle();
-        documentBitmap = result.bitmap;
-        if (documentColoredBitmap != null) documentColoredBitmap.recycle();
-        documentColoredBitmap = result.coloredBitmap;
-        points = result.points;
-
-        Bitmap tmp = documentColoredBitmap != null ? documentColoredBitmap : documentBitmap;
-
-        Bitmap scaledBitmap = ImageResizer.scaleBitmap(tmp, sourceFrame.getWidth(), sourceFrame.getHeight());
-        sourceImageView.setImageBitmap(scaledBitmap);
-        sourceImageView.setVisibility(View.VISIBLE);
-        polygonView.setVisibility(View.GONE);
-    }
-
-    private void onRotatingTaskFinished(RotatingTaskResult rotatingTaskResult) {
-        sourcePhotoBitmap = rotatingTaskResult.takenPhotoBitmap;
-        documentBitmap = rotatingTaskResult.documentBitmap;
-        documentColoredBitmap = rotatingTaskResult.documentColoredBitmap;
-
-        Bitmap scaledBitmap = ImageResizer.scaleBitmap(documentColoredBitmap != null ? documentColoredBitmap : documentBitmap, sourceFrame.getWidth(), sourceFrame.getHeight());
-        sourceImageView.setImageBitmap(scaledBitmap);
-        sourceImageView.setVisibility(View.VISIBLE);
-
-        points = null;
-    }
-
     private void onCropTaskFinished(CropTaskResult cropTaskResult) {
         points = cropTaskResult.points;
 
+        // Scale the bitmap to fit within the source frame.  We then use the bitmap size
+        // to scale the points because sourceFrame probably doesn't have the right aspect ratio
+        // (ScaleImageView doesn't support "adjustViewBounds" or "wrap_content").
         Bitmap scaledBitmap = ImageResizer.scaleBitmap(sourcePhotoBitmap, sourceFrame.getWidth(), sourceFrame.getHeight());
         sourceImageView.setImageBitmap(scaledBitmap);
-        sourceImageView.setVisibility(View.VISIBLE);
-
-        //Bitmap tempBitmap = ((BitmapDrawable) sourceImageView.getDrawable()).getBitmap();
-        Bitmap tempBitmap = scaledBitmap; // ZZZ
+        Bitmap tempBitmap = scaledBitmap;
         polygonView.setVisibility(View.VISIBLE);
 
         Map<Integer, PointF> pointsToUse = null;
@@ -522,9 +457,7 @@ public class ScanFragment extends Fragment {
             if (bitmapUri != null && bitmap == null)
                 bitmap = Utils.getBitmapFromUri(getActivity(), bitmapUri);
             if (sourcePhotoBitmap == null) sourcePhotoBitmap = bitmap;
-
             DocumentFromBitmapTaskResult result = new DocumentFromBitmapTaskResult();
-
             if (points != null) {
                 result.points = points;
             } else {
@@ -532,69 +465,66 @@ public class ScanFragment extends Fragment {
                     Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 400, 400, false);
                     result.points = getEdgePoints(scaledBmp);
                     upScalePoints(result.points, bitmap, scaledBmp.getWidth(), scaledBmp.getHeight());
-                    scaledBmp.recycle();
                 } catch (IOException e) {
                     throw new RuntimeException("Not able to resize image", e);
                 }
             }
-
-            result.bitmap = cropDocumentFromBitmap(bitmap, result.points);
-            try {
-                result.bitmap = ImageResizer.resizeImage(result.bitmap, 2048, 2048, false); // ZZZ TODO
-            } catch (IOException e) {
-                throw new RuntimeException("Not able to resize image", e);
-            }
-
+            documentBitmap = result.bitmap = cropDocumentFromBitmap(bitmap, result.points);
             if (mode == MODE_MAGIC) {
-                result.coloredBitmap = ScanUtils.getMagicColorBitmap(result.bitmap);
+                result.bitmap = ScanUtils.getMagicColorBitmap(result.bitmap);
             } else if (mode == MODE_BLACK_AND_WHITE) {
-                result.coloredBitmap = ScanUtils.getGrayBitmap(result.bitmap);
+                result.bitmap = ScanUtils.getGrayBitmap(result.bitmap);
             }
-
             return result;
         }
 
         @Override
         protected void onPostExecute(DocumentFromBitmapTaskResult documentFromBitmapTaskResult) {
-            onDocumentFromBitmapTaskFinished(documentFromBitmapTaskResult);
+            ScanFragment.this.points = documentFromBitmapTaskResult.points;
+            Bitmap tmp = documentFromBitmapTaskResult.bitmap;
+            Bitmap scaledBitmap = ImageResizer.scaleBitmap(tmp, sourceFrame.getWidth(), sourceFrame.getHeight()); //  ZZZ TODO remove?
+            sourceImageView.setImageBitmap(scaledBitmap);
+            polygonView.setVisibility(View.GONE);
             dismissDialog();
         }
     }
 
     private class RotatingTask extends AsyncTask<Void, Void, RotatingTaskResult> {
 
-        private final Bitmap takenPhotoBitmap;
+        private final Bitmap sourcePhotoBitmap;
         private final Bitmap documentBitmap;
-        private final Bitmap documentColoredBitmap;
 
-        public RotatingTask(Bitmap takenPhotoBitmap, Bitmap documentBitmap, Bitmap documentColoredBitmap) {
-            this.takenPhotoBitmap = takenPhotoBitmap;
+        public RotatingTask(Bitmap sourcePhotoBitmap, Bitmap documentBitmap) {
+            this.sourcePhotoBitmap = sourcePhotoBitmap;
             this.documentBitmap = documentBitmap;
-            this.documentColoredBitmap = documentColoredBitmap;
         }
 
         @Override
         protected RotatingTaskResult doInBackground(Void... params) {
             RotatingTaskResult result = new RotatingTaskResult();
-
-            result.takenPhotoBitmap = Utils.rotateBitmap(takenPhotoBitmap, -90);
-            takenPhotoBitmap.recycle();
-
-            result.documentBitmap = Utils.rotateBitmap(documentBitmap, -90);
-            documentBitmap.recycle();
-
-            if (documentColoredBitmap != null) {
-                result.documentColoredBitmap = Utils.rotateBitmap(documentColoredBitmap, -90);
-                documentColoredBitmap.recycle();
-            }
-
+            result.sourcePhotoBitmap = changeBitmapColorMode(currentMode, Utils.rotateBitmap(sourcePhotoBitmap, -90));
+            result.documentBitmap = changeBitmapColorMode(currentMode, Utils.rotateBitmap(documentBitmap, -90));
             return result;
         }
 
         @Override
         protected void onPostExecute(RotatingTaskResult rotatingTaskResult) {
-            onRotatingTaskFinished(rotatingTaskResult);
+            ScanFragment.this.sourcePhotoBitmap = rotatingTaskResult.sourcePhotoBitmap;
+            ScanFragment.this.documentBitmap = rotatingTaskResult.documentBitmap;
+            Bitmap scaledBitmap = ImageResizer.scaleBitmap(ScanFragment.this.documentBitmap, sourceFrame.getWidth(), sourceFrame.getHeight());
+            sourceImageView.setImageBitmap(scaledBitmap);
+            points = null;
             dismissDialog();
+        }
+    }
+
+    Bitmap changeBitmapColorMode(int mode, Bitmap bitmap) {
+        if (mode == MODE_MAGIC) {
+            return ScanUtils.getMagicColorBitmap(bitmap);
+        } else if (mode == MODE_BLACK_AND_WHITE) {
+            return ScanUtils.getGrayBitmap(bitmap);
+        } else {
+            return bitmap;
         }
     }
 
@@ -609,19 +539,12 @@ public class ScanFragment extends Fragment {
 
         @Override
         protected Bitmap doInBackground(Void... params) {
-            if (mode == MODE_MAGIC) {
-                return ScanUtils.getMagicColorBitmap(bitmap);
-            } else if (mode == MODE_BLACK_AND_WHITE) {
-                return ScanUtils.getGrayBitmap(bitmap);
-            }
-            return bitmap;
+            return changeBitmapColorMode(mode, bitmap);
         }
 
         @Override
         protected void onPostExecute(Bitmap bitmap) {
-            if (documentColoredBitmap != null) documentColoredBitmap.recycle();
-            documentColoredBitmap = bitmap;
-            updateViewsWithNewBitmap();
+            sourceImageView.setImageBitmap(bitmap);
             dismissDialog();
         }
     }
@@ -650,7 +573,6 @@ public class ScanFragment extends Fragment {
                 Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 400, 400, false);
                 result.points = getEdgePoints(scaledBmp);
                 upScalePoints(result.points, bitmap, scaledBmp.getWidth(), scaledBmp.getHeight());
-                scaledBmp.recycle();
             } catch (IOException e) {
                 throw new RuntimeException("Not able to resize image", e);
             }
@@ -669,14 +591,13 @@ public class ScanFragment extends Fragment {
     }
 
     private static class RotatingTaskResult {
-        private Bitmap takenPhotoBitmap;
+        private Bitmap sourcePhotoBitmap;
         private Bitmap documentBitmap;
         private Bitmap documentColoredBitmap;
     }
 
     private static class DocumentFromBitmapTaskResult {
         private Bitmap bitmap;
-        private Bitmap coloredBitmap;
         private Map<Integer, PointF> points;
     }
 }
