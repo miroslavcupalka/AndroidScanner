@@ -9,6 +9,8 @@ import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Gravity;
@@ -37,13 +39,14 @@ import java.util.Map;
 import static com.scanlibrary.CropActivity.EXTRA_IMAGE_URI;
 
 public class ScanFragment extends Fragment {
+    private static final String TAG = ScanFragment.class.getSimpleName();
+
     public static final String RESULT_IMAGE_URI = "result_image_uri";
     private static final int MODE_NONE = 0;
     private static final int MODE_BLACK_AND_WHITE = 1;
     private static final int MODE_MAGIC = 2;
 
-    private ImageView sourceImageView;
-    private ScaleImageView scaleImageView;
+    private ScaleImageView sourceImageView;
     private FrameLayout sourceFrame;
     private PolygonView polygonView;
     private ProgressDialogFragment progressDialogFragment;
@@ -67,7 +70,6 @@ public class ScanFragment extends Fragment {
         setRetainInstance(true);
         setHasOptionsMenu(true);
         sourcePhotoUri = getArguments().getParcelable(EXTRA_IMAGE_URI);
-        // ZZZ onPhotoTaken();
         onCropButtonClicked();
     }
 
@@ -78,46 +80,15 @@ public class ScanFragment extends Fragment {
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
-        sourceImageView = (ImageView) view.findViewById(R.id.sourceImageView);
-        scaleImageView = (ScaleImageView) view.findViewById(R.id.scaleImage);
+        super.onViewCreated(view, savedInstanceState);
+        sourceImageView = (ScaleImageView) view.findViewById(R.id.sourceImageView);
         sourceFrame = (FrameLayout) view.findViewById(R.id.sourceFrame);
         polygonView = (PolygonView) view.findViewById(R.id.polygonView);
-
-        super.onViewCreated(view, savedInstanceState);
-
         int currentOrientation = Utils.getScreenOrientation(getActivity());
         if (previousOrientation == -1) {
             previousOrientation = currentOrientation;
         } else if (previousOrientation != currentOrientation) {
             points = null;
-        }
-
-        if (takenPhotoLocation == null) {
-            // ZZZ ScanFragmentPermissionsDispatcher.takePhotoWithPermissionCheck(this);
-        } else {
-            if (documentBitmap != null) {
-                updateViewsWithNewBitmap();
-                sourceImageView.setVisibility(View.INVISIBLE);
-                scaleImageView.setVisibility(View.VISIBLE);
-            }
-        }
-
-        if (false && isCropMode && sourcePhotoBitmap != null) {
-            sourceFrame.post(new Runnable() {
-                @Override
-                public void run() {
-                    Bitmap scaledBitmap = ImageResizer.scaleBitmap(sourcePhotoBitmap, sourceFrame.getWidth(), sourceFrame.getHeight());
-                    sourceImageView.setImageBitmap(scaledBitmap);
-                    Bitmap tempBitmap = ((BitmapDrawable) sourceImageView.getDrawable()).getBitmap();
-                    polygonView.setVisibility(View.VISIBLE);
-                    int padding = (int) getResources().getDimension(R.dimen.scanPadding);
-                    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
-                    layoutParams.gravity = Gravity.CENTER;
-                    polygonView.setLayoutParams(layoutParams);
-                    if (points == null) points = getOutlinePoints(tempBitmap);
-                    polygonView.setPoints(points);
-                }
-            });
         }
     }
 
@@ -210,9 +181,10 @@ public class ScanFragment extends Fragment {
             width = 2048;
             height = 2048;
         }
+        Log.i(TAG, "ZZZ converting " + tmp.getWidth() + " x " + tmp.getHeight() + " to " + width + " x " + height);
         tmp = ImageResizer.scaleBitmap(tmp, width, height);
+        Log.i(TAG, "ZZZ final size: " + tmp.getWidth() + " x " + tmp.getHeight());
         sourceImageView.setImageBitmap(tmp);
-        scaleImageView.setImageBitmap(tmp);
     }
 
     /**
@@ -221,8 +193,7 @@ public class ScanFragment extends Fragment {
     public boolean onBackPressed() {
         if (isCropMode) {
             updateViewsWithNewBitmap();
-            sourceImageView.setVisibility(View.INVISIBLE);
-            scaleImageView.setVisibility(View.VISIBLE);
+            sourceImageView.setVisibility(View.VISIBLE);
             polygonView.setVisibility(View.GONE);
 
             getActivity().invalidateOptionsMenu();
@@ -480,10 +451,7 @@ public class ScanFragment extends Fragment {
 
         Bitmap scaledBitmap = ImageResizer.scaleBitmap(tmp, sourceFrame.getWidth(), sourceFrame.getHeight());
         sourceImageView.setImageBitmap(scaledBitmap);
-        sourceImageView.setVisibility(View.INVISIBLE);
-        scaleImageView.setImageBitmap(scaledBitmap);
-        scaleImageView.setVisibility(View.VISIBLE);
-
+        sourceImageView.setVisibility(View.VISIBLE);
         polygonView.setVisibility(View.GONE);
     }
 
@@ -494,9 +462,7 @@ public class ScanFragment extends Fragment {
 
         Bitmap scaledBitmap = ImageResizer.scaleBitmap(documentColoredBitmap != null ? documentColoredBitmap : documentBitmap, sourceFrame.getWidth(), sourceFrame.getHeight());
         sourceImageView.setImageBitmap(scaledBitmap);
-        sourceImageView.setVisibility(View.INVISIBLE);
-        scaleImageView.setImageBitmap(scaledBitmap);
-        scaleImageView.setVisibility(View.VISIBLE);
+        sourceImageView.setVisibility(View.VISIBLE);
 
         points = null;
     }
@@ -507,9 +473,9 @@ public class ScanFragment extends Fragment {
         Bitmap scaledBitmap = ImageResizer.scaleBitmap(sourcePhotoBitmap, sourceFrame.getWidth(), sourceFrame.getHeight());
         sourceImageView.setImageBitmap(scaledBitmap);
         sourceImageView.setVisibility(View.VISIBLE);
-        scaleImageView.setVisibility(View.GONE);
 
-        Bitmap tempBitmap = ((BitmapDrawable) sourceImageView.getDrawable()).getBitmap();
+        //Bitmap tempBitmap = ((BitmapDrawable) sourceImageView.getDrawable()).getBitmap();
+        Bitmap tempBitmap = scaledBitmap; // ZZZ
         polygonView.setVisibility(View.VISIBLE);
 
         Map<Integer, PointF> pointsToUse = null;
@@ -520,8 +486,8 @@ public class ScanFragment extends Fragment {
         }
 
         polygonView.setPoints(pointsToUse);
-        int padding = (int) getResources().getDimension(R.dimen.scanPadding);
-        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
+        int padding = (int) getResources().getDimension(R.dimen.polygonViewCircleWidth);
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + padding, tempBitmap.getHeight() + padding);
         layoutParams.gravity = Gravity.CENTER;
         polygonView.setLayoutParams(layoutParams);
     }

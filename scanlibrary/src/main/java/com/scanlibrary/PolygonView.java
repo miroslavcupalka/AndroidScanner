@@ -170,7 +170,7 @@ public class PolygonView extends FrameLayout {
         float minDiff = Float.MAX_VALUE;
         ImageView best = null;
         for (ImageView v : pointers) {
-            int FUZZ = v.getWidth();
+            int FUZZ = v.getWidth() * 3;
             float diffX = Math.abs(event.getX() - midX(v));
             float diffY = Math.abs(event.getY() - midY(v));
             if (diffX > FUZZ) continue;
