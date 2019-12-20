@@ -1,7 +1,7 @@
 package com.scanlibrary;
 
-
 import android.graphics.Bitmap;
+import android.os.Environment;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvException;
@@ -13,16 +13,14 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ScanUtils {
-
-    // ===========================================================
-    // Constants
-    // ===========================================================
 
     static {
         System.loadLibrary("opencv_java3");
@@ -31,20 +29,7 @@ public class ScanUtils {
     private static final String LOG_TAG = ScanUtils.class.getSimpleName();
     private static final boolean DEBUG = false;
 
-    // ===========================================================
-    // Fields
-    // ===========================================================
-
-    // ===========================================================
-    // Constructors
-    // ===========================================================
-
-    // ===========================================================
-    // Getters & Setters
-    // ===========================================================
-
     public static MatOfPoint2f computePoint(int p1, int p2) {
-
         MatOfPoint2f pt = new MatOfPoint2f();
         pt.fromArray(new Point(p1, p2));
         return pt;
@@ -88,27 +73,26 @@ public class ScanUtils {
      * hand, because then the contour isn't convex and doesn't have 4 corners.
      */
     public static List<MatOfPoint> findSquares(Bitmap bitmap) {
+        int imageArea = bitmap.getWidth() * bitmap.getHeight();
+        List<MatOfPoint> squares = new ArrayList<>();
         Mat image = new Mat();
         Bitmap bmp32 = bitmap.copy(Bitmap.Config.ARGB_8888, true);
         org.opencv.android.Utils.bitmapToMat(bmp32, image);
 
-//        if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/mat.png", image);
+        String dir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/opencv";
+        new File(dir).mkdirs();
+        if (DEBUG) Imgcodecs.imwrite(dir + "/01-mat.png", image); // TODO: Why does orange look blue?
 
         Mat image_proc = image.clone();
-        List<MatOfPoint> squares = new ArrayList<>();
         // blur will enhance edge detection
         Mat blurred = image_proc.clone();
-
-//        if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/blured.png", blurred);
-
         // Bluring Image
         Imgproc.medianBlur(image_proc, blurred, 9);
+        if (DEBUG) Imgcodecs.imwrite(dir + "/02-blurred.png", blurred);
+
         Mat gray0 = new Mat(blurred.size(), CvType.CV_8U);
+
         Mat gray = new Mat();
-
-//        if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-1.png", gray0);
-//        if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/blured-0.png", blurred);
-
         List<MatOfPoint> contours = new ArrayList<>();
 
         // find squares in every color plane of the image
@@ -119,29 +103,34 @@ public class ScanUtils {
             List<Mat> grayList = new ArrayList<>(1);
             grayList.add(gray0);
             Core.mixChannels(bluredList, grayList, new MatOfInt(ch));
-//            if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-2-" + c + ".png", gray0);
+            if (DEBUG) Imgcodecs.imwrite(dir + "/04-gray0-c" + c + ".png", gray0);
 
             // try several threshold levels
-            final int threshold_level = 2;
+            final int threshold_level = 10;
+            final double thresh_increment = 255.0 / threshold_level;
 
             for (int l = 0; l < threshold_level; l++) {
                 // Use Canny instead of zero threshold level!
                 // Canny helps to catch squares with gradient shading
                 if (l == 0) {
                     Imgproc.Canny(gray0, gray, 10, 30, 3, true);
-//                    if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-1-" + c + ".png", gray);
+                    if (DEBUG) Imgcodecs.imwrite(dir + "/05-gray-c" + c + "l" + l + ".png", gray);
                     Imgproc.dilate(gray, gray, new Mat(), new Point(-1, -1), 1);
-//                    if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-2-" + c + ".png", gray);
+                    if (DEBUG) Imgcodecs.imwrite(dir + "/05-gray-c" + c + "l" + l + "-2.png", gray);
                 } else {
-                    double val = (l + 1) * 255 / threshold_level;
-                    Core.compare(gray0, new Scalar(val), gray, Core.CMP_GE);
+                    double val = l * thresh_increment;
+                    Mat above = new Mat();
+                    Core.compare(gray0, new Scalar(val - thresh_increment), above, Core.CMP_GE);
+                    Mat below = new Mat();
+                    Core.compare(gray0, new Scalar(val + thresh_increment), below, Core.CMP_LE);
+                    Mat between = new Mat();
+                    Core.bitwise_and(above, below, between);
+                    gray = between;
+                    if (DEBUG) Imgcodecs.imwrite(dir + "/05-gray-c" + c + "l" + l + ".png", gray);
                 }
 
                 // Find contours and store them in a list
                 Imgproc.findContours(gray, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
-
-//                if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray-4-" + c + ".png", gray);
-//                if (DEBUG) Highgui.imwrite(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gray0-3-" + c + ".png", gray0);
 
                 // Test contours
                 MatOfPoint2f approx = new MatOfPoint2f();
@@ -155,10 +144,13 @@ public class ScanUtils {
                     // Note: absolute value of an area is used because
                     // area may be positive or negative - in accordance with the
                     // contour orientation
-
-                    double val1 = Math.abs(Imgproc.contourArea(approx));
-                    boolean val2 = Imgproc.isContourConvex(new MatOfPoint(approx.toArray()));
-                    if (approx.toArray().length == 4 && val1 > 1000 && val2) {
+                    double area = Math.abs(Imgproc.contourArea(approx));
+                    if (area / imageArea < .10) {
+                        continue;
+                    }
+                    // Log.i(LOG_TAG, "Contour " + Arrays.toString(approx.toArray()));
+                    boolean isConvex = Imgproc.isContourConvex(new MatOfPoint(approx.toArray()));
+                    if (approx.toArray().length == 4 && isConvex) {
                         double maxCosine = 0;
 
                         for (int j = 2; j < 5; j++) {
@@ -190,7 +182,6 @@ public class ScanUtils {
         double dy1 = pt1.y - pt0.y;
         double dx2 = pt2.x - pt0.x;
         double dy2 = pt2.y - pt0.y;
-
         return (dx1 * dx2 + dy1 * dy2) / Math.sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2) + 1e-10);
     }
 
