@@ -1,6 +1,6 @@
 package com.scanlibrary;
 
-import android.media.ExifInterface;
+import android.support.media.ExifInterface;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,27 +29,11 @@ public class ExifInterfaceUtils {
         }
     }
 
-    public static void removeTag(String pathToFile, String tag) {
-        copyExifInterface(pathToFile, pathToFile, tag);
+    public static void removeTag(ExifInterface exif, String tag) {
+        exif.setAttribute(tag, null);
     }
 
-    public static void copyExifInterface(String sourceLocation, String targetLocation, String excludeExifTag) {
-        ExifInterface sourceExif = null;
-        try {
-            sourceExif = new ExifInterface(sourceLocation);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        ExifInterface targetExif = null;
-        try {
-            targetExif = new ExifInterface(targetLocation);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-
+    public static void copyExifInterface(ExifInterface sourceExif, ExifInterface targetExif, String excludeExifTag) {
         final String[] EXIF_ATTRIBUTES_TO_COPY = {
                 ExifInterface.TAG_DATETIME,
                 ExifInterface.TAG_MAKE,
@@ -60,8 +44,8 @@ public class ExifInterfaceUtils {
                 ExifInterface.TAG_GPS_LATITUDE_REF,
                 ExifInterface.TAG_GPS_LONGITUDE_REF,
                 ExifInterface.TAG_EXPOSURE_TIME,
-                ExifInterface.TAG_APERTURE,
-                ExifInterface.TAG_ISO,
+                ExifInterface.TAG_F_NUMBER,
+                ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY,
                 ExifInterface.TAG_GPS_ALTITUDE,
                 ExifInterface.TAG_GPS_ALTITUDE_REF,
                 ExifInterface.TAG_GPS_TIMESTAMP,
@@ -76,7 +60,6 @@ public class ExifInterfaceUtils {
             exifAttributesToCopyList.remove(excludeExifTag);
         }
 
-
         ExifInterfaceUtils.copyExifAttributes(sourceExif, targetExif, exifAttributesToCopyList);
 
         try {
@@ -84,7 +67,5 @@ public class ExifInterfaceUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
-
 }

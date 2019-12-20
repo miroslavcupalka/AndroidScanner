@@ -13,7 +13,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 
 import com.davemorrissey.labs.subscaleview.ScaleImageView;
 import com.scanlibrary.CropActivity;
@@ -21,6 +20,8 @@ import com.scanlibrary.ScanFragment;
 import com.scanlibrary.Utils;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import permissions.dispatcher.NeedsPermission;
 import permissions.dispatcher.OnShowRationale;
@@ -74,7 +75,6 @@ public class DemoScanActivity extends AppCompatActivity {
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        Log.i(TAG, "ZZZ onRestoreInstanceState");
         super.onRestoreInstanceState(savedInstanceState);
     }
 
@@ -123,7 +123,13 @@ public class DemoScanActivity extends AppCompatActivity {
             if (bitmap != null) {
                 image.setImageBitmap(bitmap);
                 cropButton.setVisibility(View.VISIBLE);
-                MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "cropped-image", "Cropped Image");
+                try {
+                    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
+                    String date = df.format(new Date());
+                    MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "cropped-image-" + date, "Cropped Image " + date);
+                } catch (Exception e) {
+                    Log.e(TAG, "Could not save image to media store", e);
+                }
             }
         }
     }
