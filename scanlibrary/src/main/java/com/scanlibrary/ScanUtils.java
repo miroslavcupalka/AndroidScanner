@@ -82,6 +82,11 @@ public class ScanUtils {
         return points;
     }
 
+    /*
+     * Fred's note: It looks like this code came straight from https://stackoverflow.com/a/8863060.
+     * The code works well for simple cases, but fails if you are holding a document with your
+     * hand, because then the contour isn't convex and doesn't have 4 corners.
+     */
     public static List<MatOfPoint> findSquares(Bitmap bitmap) {
         Mat image = new Mat();
         Bitmap bmp32 = bitmap.copy(Bitmap.Config.ARGB_8888, true);
