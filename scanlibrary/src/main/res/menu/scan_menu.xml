@@ -16,6 +16,11 @@
         android:title="@string/crop"/>
 
     <item
+        android:id="@+id/auto_crop"
+        app:showAsAction="always"
+        android:title="Auto Crop"/>
+
+    <item
         android:id="@+id/colors"
         android:icon="@drawable/ic_color_lens_white_24dp"
         app:showAsAction="always"
@@ -40,8 +45,7 @@
 
     <item
         android:id="@+id/done"
-        android:icon="@drawable/ic_done_white_24dp"
         app:showAsAction="always"
-        android:title="@string/finish"/>
+        android:title="@string/done"/>
 
 </menu>

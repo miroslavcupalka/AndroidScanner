@@ -2,7 +2,7 @@
 <resources>
 
     <string name="document_scann_lib_name" translatable="false">dycode</string>
-    <string name="finish">Finish</string>
+    <string name="done">Done</string>
     <string name="crop">Crop</string>
     <string name="rotate">Rotate</string>
     <string name="cant_crop">Can\'t crop the image, change the points</string>

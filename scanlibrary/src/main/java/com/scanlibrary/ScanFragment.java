@@ -97,6 +97,7 @@ public class ScanFragment extends Fragment {
         inflater.inflate(R.menu.scan_menu, menu);
 
         MenuItem cropBtn = menu.findItem(R.id.crop);
+        MenuItem autoCropBtn = menu.findItem(R.id.auto_crop);
         MenuItem rotateBtn = menu.findItem(R.id.rotate);
         MenuItem modeBtn = menu.findItem(R.id.colors);
         MenuItem modeNone = menu.findItem(R.id.mode_none);
@@ -112,6 +113,7 @@ public class ScanFragment extends Fragment {
         }
 
         cropBtn.setVisible(!isCropMode);
+        autoCropBtn.setVisible(isCropMode);
         rotateBtn.setVisible(!isCropMode);
         modeBtn.setVisible(!isCropMode);
 
@@ -123,6 +125,9 @@ public class ScanFragment extends Fragment {
 
         if (item.getItemId() == R.id.crop) {
             onCropButtonClicked();
+            return true;
+        } else if (item.getItemId() == R.id.auto_crop) {
+            new CropTask(sourcePhotoBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             return true;
         } else if (item.getItemId() == R.id.done) {
             onDoneButtonClicked();
@@ -186,7 +191,6 @@ public class ScanFragment extends Fragment {
         isCropMode = true;
 
         if (points == null) {
-            showProgressDialog(R.string.detecting);
             if (sourcePhotoBitmap != null)
                 new CropTask(sourcePhotoBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             else
@@ -328,6 +332,7 @@ public class ScanFragment extends Fragment {
         }
     }
 
+    /** Detect the four points of the document. */
     private static Map<Integer, PointF> getEdgePoints(Bitmap tempBitmap) {
         List<PointF> pointFs = getContourEdgePoints(tempBitmap);
         Map<Integer, PointF> orderedPoints = orderedValidEdgePoints(tempBitmap, pointFs);
@@ -542,6 +547,11 @@ public class ScanFragment extends Fragment {
     private class CropTask extends AsyncTask<Void, Void, CropTaskResult> {
         private Bitmap bitmap;
         private Uri bitmapUri;
+
+        @Override
+        protected void onPreExecute() {
+            showProgressDialog(R.string.detecting);
+        }
 
         public CropTask(Bitmap bitmap) {
             this.bitmap = bitmap;

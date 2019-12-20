@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="finish">Завершить</string>
+    <string name="done">Завершить</string>
     <string name="crop">Обрезать</string>
     <string name="rotate">Повернуть</string>
     <string name="cant_crop">Не можем обрезать изображение, меняйте пункты</string>
