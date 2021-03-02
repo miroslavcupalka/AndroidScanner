@@ -42,12 +42,13 @@ repositories {
 
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile(name: 'OpenCV-3.1.0-Android', ext: 'aar')
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation(name: 'OpenCV-3.1.0-Android', ext: 'aar')
     //Library for Image View That have Ability to zoom...
-    compile 'com.davemorrissey.labs:subsampling-scale-image-view:2.3.0'
-    compile 'com.android.support:appcompat-v7:25.4.0'
-    compile(name: 'OpenCV-3.1.0-Android', ext: 'aar')
+    implementation 'com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.3.0'
+    implementation(name: 'OpenCV-3.1.0-Android', ext: 'aar')
 }
 
 //apply from: 'https://raw.github.com/andrejlukasevic/gradle-mvn-push/master/gradle-mvn-push.gradle'

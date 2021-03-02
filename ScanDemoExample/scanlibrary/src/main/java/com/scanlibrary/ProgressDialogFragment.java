@@ -1,9 +1,10 @@
 package com.scanlibrary;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
 import android.app.ProgressDialog;
 import android.os.Bundle;
+
+import androidx.fragment.app.DialogFragment;
 
 public class ProgressDialogFragment extends DialogFragment {
     // ===========================================================

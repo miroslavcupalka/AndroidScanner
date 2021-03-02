@@ -1,7 +1,6 @@
 package com.scanlibrary;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
@@ -24,7 +23,10 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.davemorrissey.labs.subscaleview.ScaleImageView;
+import androidx.fragment.app.Fragment;
+
+import com.davemorrissey.labs.subscaleview.ImageSource;
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 import org.opencv.core.Point;
 
@@ -265,7 +267,7 @@ public class ScanFragment extends Fragment {
 
         tmp = ImageResizer.scaleBitmap(tmp, width, height);
         viewHolder.sourceImageView.setImageBitmap(tmp);
-        viewHolder.scaleImageView.setImageBitmap(tmp);
+        viewHolder.scaleImageView.setImage(ImageSource.bitmap(tmp));
     }
 
     /**
@@ -552,11 +554,11 @@ public class ScanFragment extends Fragment {
         progressDialogFragment = new ProgressDialogFragment();
         progressDialogFragment.setArguments(args);
         progressDialogFragment.setCancelable(false);
-        progressDialogFragment.show(getFragmentManager(), "progress_dialog");
+        progressDialogFragment.show(getChildFragmentManager(), "progress_dialog");
     }
 
     protected void dismissDialog() {
-        ProgressDialogFragment progressDialogFragment = (ProgressDialogFragment) getFragmentManager().findFragmentByTag("progress_dialog");
+        ProgressDialogFragment progressDialogFragment = (ProgressDialogFragment) getChildFragmentManager().findFragmentByTag("progress_dialog");
         if (progressDialogFragment != null) progressDialogFragment.dismissAllowingStateLoss();
     }
 
@@ -572,7 +574,7 @@ public class ScanFragment extends Fragment {
         Bitmap scaledBitmap = ImageResizer.scaleBitmap(tmp, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
         viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
-        viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
+        viewHolder.scaleImageView.setImage(ImageSource.bitmap(scaledBitmap));
         viewHolder.scaleImageView.setVisibility(View.VISIBLE);
 
         viewHolder.polygonView.setVisibility(View.GONE);
@@ -586,7 +588,7 @@ public class ScanFragment extends Fragment {
         Bitmap scaledBitmap = ImageResizer.scaleBitmap(documentColoredBitmap != null ? documentColoredBitmap : documentBitmap, viewHolder.sourceFrame.getWidth(), viewHolder.sourceFrame.getHeight());
         viewHolder.sourceImageView.setImageBitmap(scaledBitmap);
         viewHolder.sourceImageView.setVisibility(View.INVISIBLE);
-        viewHolder.scaleImageView.setImageBitmap(scaledBitmap);
+        viewHolder.scaleImageView.setImage(ImageSource.bitmap(scaledBitmap));
         viewHolder.scaleImageView.setVisibility(View.VISIBLE);
 
         points = null;
@@ -807,13 +809,13 @@ public class ScanFragment extends Fragment {
 
     private static class ViewHolder {
         private ImageView sourceImageView;
-        private ScaleImageView scaleImageView;
+        private SubsamplingScaleImageView scaleImageView;
         private FrameLayout sourceFrame;
         private PolygonView polygonView;
 
         void prepare(View parent) {
             sourceImageView = (ImageView) parent.findViewById(R.id.sourceImageView);
-            scaleImageView = (ScaleImageView) parent.findViewById(R.id.scaleImage);
+            scaleImageView = (SubsamplingScaleImageView ) parent.findViewById(R.id.scaleImage);
             sourceFrame = (FrameLayout) parent.findViewById(R.id.sourceFrame);
             polygonView = (PolygonView) parent.findViewById(R.id.polygonView);
         }
