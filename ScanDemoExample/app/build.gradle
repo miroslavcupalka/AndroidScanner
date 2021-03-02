@@ -12,8 +12,8 @@ buildscript {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion "27.0.3"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
 
     splits {
         abi {
@@ -26,8 +26,8 @@ android {
 
     defaultConfig {
         applicationId "com.scanner.demo"
-        minSdkVersion 14
-        targetSdkVersion 25
+        minSdkVersion 24
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
     }
