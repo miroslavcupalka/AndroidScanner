@@ -15,6 +15,11 @@
 		app:showAsAction="always" />
 
 	<item
+		android:id="@+id/auto_crop"
+		android:title="@string/auto_crop"
+		app:showAsAction="always" />
+
+	<item
 		android:id="@+id/colors"
 		android:icon="@drawable/ic_color_lens_white_24dp"
 		android:title="@null"

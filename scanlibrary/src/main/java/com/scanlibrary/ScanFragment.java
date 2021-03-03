@@ -178,6 +178,7 @@ public class ScanFragment extends Fragment {
         inflater.inflate(R.menu.scan_menu, menu);
 
         MenuItem cropBtn = menu.findItem(R.id.crop);
+        MenuItem autoCropBtn = menu.findItem(R.id.auto_crop);
         MenuItem rotateBtn = menu.findItem(R.id.rotate);
         MenuItem modeBtn = menu.findItem(R.id.colors);
         MenuItem modeNone = menu.findItem(R.id.mode_none);
@@ -193,6 +194,7 @@ public class ScanFragment extends Fragment {
         }
 
         cropBtn.setVisible(!isCropMode);
+        autoCropBtn.setVisible(isCropMode);
         rotateBtn.setVisible(!isCropMode);
         modeBtn.setVisible(!isCropMode);
 
@@ -203,7 +205,7 @@ public class ScanFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
-        if (item.getItemId() == R.id.crop) {
+        if (item.getItemId() == R.id.crop || item.getItemId() == R.id.auto_crop) {
             onCropButtonClicked();
             return true;
         } else if (item.getItemId() == R.id.done) {

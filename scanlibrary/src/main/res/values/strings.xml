@@ -11,4 +11,5 @@
     <string name="mode_none">None</string>
     <string name="mode_black_white">Black &amp; White</string>
     <string name="mode_magic">Magic</string>
+	<string name="auto_crop">Auto Crop</string>
 </resources>
