@@ -8,8 +8,9 @@ import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Gravity;
@@ -38,6 +39,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ScanFragment extends Fragment {
@@ -77,6 +80,9 @@ public class ScanFragment extends Fragment {
     private int currentMode = MODE_MAGIC;
 
     private int previousOreantation = -1;
+
+    private final Handler resultHandler = new Handler(Looper.getMainLooper());
+    private final Executor executor = Executors.newSingleThreadExecutor();
 
     // ===========================================================
     // Constructors
@@ -240,12 +246,12 @@ public class ScanFragment extends Fragment {
     // ===========================================================
     private void onMagicModeChosen() {
         showProgressDialog();
-        new ModeChangingTask(MODE_MAGIC, documentBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new ModeChangingExecutor(MODE_MAGIC, documentBitmap).executeTask();
     }
 
     private void onBlackAndWhiteModeChosen() {
         showProgressDialog();
-        new ModeChangingTask(MODE_BLACK_AND_WHITE, documentBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new ModeChangingExecutor(MODE_BLACK_AND_WHITE, documentBitmap).executeTask();
     }
 
     private void onNoneModeChosen() {
@@ -304,7 +310,7 @@ public class ScanFragment extends Fragment {
 
         if (points == null) {
             showProgressDialog();
-            new CropTask(takenPhotoBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            new CropTaskExecutor(takenPhotoBitmap).executeTask();
             return;
         }
         CropTaskResult result = new CropTaskResult();
@@ -314,7 +320,7 @@ public class ScanFragment extends Fragment {
 
     private void onRotateButtonClicked() {
         showProgressDialog();
-        new RotatingTask(takenPhotoBitmap, documentBitmap, documentColoredBitmap).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new RotatingExecutor(takenPhotoBitmap, documentBitmap, documentColoredBitmap).executeTask();
     }
 
     private void onDoneButtonClicked() {
@@ -325,7 +331,7 @@ public class ScanFragment extends Fragment {
             Map<Integer, PointF> points = viewHolder.polygonView.getPoints();
             if (isScanPointsValid(points)) {
                 upScalePoints(points, takenPhotoBitmap, viewHolder.sourceImageView.getWidth(), viewHolder.sourceImageView.getHeight());
-                new DocumentFromBitmapTask(takenPhotoBitmap, points, currentMode).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new DocumentFromBitmapExecutor(takenPhotoBitmap, points, currentMode).executeTask();
             } else {
                 showErrorDialog();
             }
@@ -391,8 +397,7 @@ public class ScanFragment extends Fragment {
     private void onPhotoTaken() {
         takenPhotoBitmap = getBitmapFromLocation(takenPhotoLocation);
 
-        DocumentFromBitmapTask documentFromBitmapTask = new DocumentFromBitmapTask(takenPhotoBitmap, null, currentMode);
-        documentFromBitmapTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new DocumentFromBitmapExecutor(takenPhotoBitmap, null, currentMode).executeTask();
     }
 
     private static Bitmap cropDocumentFromBitmap(Bitmap bitmap, Map<Integer, PointF> points) {
@@ -629,160 +634,187 @@ public class ScanFragment extends Fragment {
     // Inner and Anonymous Classes
     // ===========================================================
 
-    private class DocumentFromBitmapTask extends AsyncTask<Void, Void, DocumentFromBitmapTaskResult> {
+    private class DocumentFromBitmapExecutor {
 
         private final Bitmap bitmap;
         private final Map<Integer, PointF> points;
         private int mode;
 
-        public DocumentFromBitmapTask(Bitmap bitmap, Map<Integer, PointF> points, int mode) {
+        public DocumentFromBitmapExecutor(Bitmap bitmap, Map<Integer, PointF> points, int mode) {
             this.bitmap = bitmap;
             this.points = points;
             this.mode = mode;
         }
 
-        @Override
-        protected void onPreExecute() {
-            showProgressDialog();
-        }
+        public void executeTask() {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    System.gc();
+                    DocumentFromBitmapTaskResult result = new DocumentFromBitmapTaskResult();
 
-        @Override
-        protected DocumentFromBitmapTaskResult doInBackground(Void... params) {
-            System.gc();
-            DocumentFromBitmapTaskResult result = new DocumentFromBitmapTaskResult();
+                    if (points != null) {
+                        result.points = points;
+                    } else {
+                        try {
+                            Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 400, 400, false);
+                            result.points = getEdgePoints(scaledBmp);
+                            upScalePoints(result.points, bitmap, scaledBmp.getWidth(), scaledBmp.getHeight());
+                            scaledBmp.recycle();
+                        } catch (IOException e) {
+                            throw new RuntimeException("Not able to resize image", e);
+                        }
+                    }
 
-            if (points != null) {
-                result.points = points;
-            } else {
-                try {
-                    Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 400, 400, false);
-                    result.points = getEdgePoints(scaledBmp);
-                    upScalePoints(result.points, bitmap, scaledBmp.getWidth(), scaledBmp.getHeight());
-                    scaledBmp.recycle();
-                } catch (IOException e) {
-                    throw new RuntimeException("Not able to resize image", e);
+                    result.bitmap = cropDocumentFromBitmap(bitmap, result.points);
+                    try {
+                        result.bitmap = ImageResizer.resizeImage(result.bitmap, 2048, 2048, false);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Not able to resize image", e);
+                    }
+
+                    if (mode == MODE_MAGIC) {
+                        result.coloredBitmap = ScanUtils.getMagicColorBitmap(result.bitmap);
+                    } else if (mode == MODE_BLACK_AND_WHITE) {
+                        result.coloredBitmap = ScanUtils.getGrayBitmap(result.bitmap);
+                    }
+                    notifyResult(result);
                 }
-            }
-
-            result.bitmap = cropDocumentFromBitmap(bitmap, result.points);
-            try {
-                result.bitmap = ImageResizer.resizeImage(result.bitmap, 2048, 2048, false);
-            } catch (IOException e) {
-                throw new RuntimeException("Not able to resize image", e);
-            }
-
-            if (mode == MODE_MAGIC) {
-                result.coloredBitmap = ScanUtils.getMagicColorBitmap(result.bitmap);
-            } else if (mode == MODE_BLACK_AND_WHITE) {
-                result.coloredBitmap = ScanUtils.getGrayBitmap(result.bitmap);
-            }
-
-            return result;
+            });
         }
 
-        @Override
-        protected void onPostExecute(DocumentFromBitmapTaskResult documentFromBitmapTaskResult) {
-            onDocumentFromBitmapTaskFinished(documentFromBitmapTaskResult);
-            dismissDialog();
+        private void notifyResult(final DocumentFromBitmapTaskResult result) {
+            resultHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    onDocumentFromBitmapTaskFinished(result);
+                    dismissDialog();
+                }
+            });
         }
     }
 
-    private class RotatingTask extends AsyncTask<Void, Void, RotatingTaskResult> {
+    private class RotatingExecutor {
 
         private final Bitmap takenPhotoBitmap;
         private final Bitmap documentBitmap;
         private final Bitmap documentColoredBitmap;
 
-        public RotatingTask(Bitmap takenPhotoBitmap, Bitmap documentBitmap, Bitmap documentColoredBitmap) {
+        public RotatingExecutor(Bitmap takenPhotoBitmap, Bitmap documentBitmap, Bitmap documentColoredBitmap) {
             this.takenPhotoBitmap = takenPhotoBitmap;
             this.documentBitmap = documentBitmap;
             this.documentColoredBitmap = documentColoredBitmap;
         }
 
-        @Override
-        protected RotatingTaskResult doInBackground(Void... params) {
-            RotatingTaskResult result = new RotatingTaskResult();
+        public void executeTask() {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    RotatingTaskResult result = new RotatingTaskResult();
 
-            result.takenPhotoBitmap = Utils.rotateBitmap(takenPhotoBitmap, -90);
-            takenPhotoBitmap.recycle();
+                    result.takenPhotoBitmap = Utils.rotateBitmap(takenPhotoBitmap, -90);
+                    takenPhotoBitmap.recycle();
 
-            result.documentBitmap = Utils.rotateBitmap(documentBitmap, -90);
-            documentBitmap.recycle();
+                    result.documentBitmap = Utils.rotateBitmap(documentBitmap, -90);
+                    documentBitmap.recycle();
 
-            if (documentColoredBitmap != null) {
-                result.documentColoredBitmap = Utils.rotateBitmap(documentColoredBitmap, -90);
-                documentColoredBitmap.recycle();
-            }
-
-            return result;
+                    if (documentColoredBitmap != null) {
+                        result.documentColoredBitmap = Utils.rotateBitmap(documentColoredBitmap, -90);
+                        documentColoredBitmap.recycle();
+                    }
+                    notifyResult(result);
+                }
+            });
         }
 
-        @Override
-        protected void onPostExecute(RotatingTaskResult rotatingTaskResult) {
-            onRotatingTaskFinished(rotatingTaskResult);
-            dismissDialog();
+        private void notifyResult(final RotatingTaskResult result) {
+            resultHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    onRotatingTaskFinished(result);
+                    dismissDialog();
+                }
+            });
         }
     }
 
-    private class ModeChangingTask extends AsyncTask<Void, Void, ModeChangingTaskResult> {
+    private class ModeChangingExecutor {
 
         private final int mode;
         private final Bitmap bitmap;
 
-        public ModeChangingTask(int mode, Bitmap bitmap) {
+        public ModeChangingExecutor(int mode, Bitmap bitmap) {
             this.mode = mode;
             this.bitmap = bitmap;
         }
 
-        @Override
-        protected ModeChangingTaskResult doInBackground(Void... params) {
-            ModeChangingTaskResult result = new ModeChangingTaskResult();
-            result.mode = mode;
+        public void executeTask() {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    ModeChangingTaskResult result = new ModeChangingTaskResult();
+                    result.mode = mode;
 
-            if (mode == MODE_MAGIC) {
-                result.bitmap = ScanUtils.getMagicColorBitmap(bitmap);
-            } else if (mode == MODE_BLACK_AND_WHITE) {
-                result.bitmap = ScanUtils.getGrayBitmap(bitmap);
-            }
-
-            return result;
+                    if (mode == MODE_MAGIC) {
+                        result.bitmap = ScanUtils.getMagicColorBitmap(bitmap);
+                    } else if (mode == MODE_BLACK_AND_WHITE) {
+                        result.bitmap = ScanUtils.getGrayBitmap(bitmap);
+                    }
+                    notifyResult(result);
+                }
+            });
         }
 
-        @Override
-        protected void onPostExecute(ModeChangingTaskResult modeChangingTaskResult) {
-            onModeChangingTaskFinished(modeChangingTaskResult);
-            dismissDialog();
+        private void notifyResult(final ModeChangingTaskResult result) {
+            resultHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    onModeChangingTaskFinished(result);
+                    dismissDialog();
+                }
+            });
         }
+
     }
 
-    private class CropTask extends AsyncTask<Void, Void, CropTaskResult> {
+	private class CropTaskExecutor {
 
-        private final Bitmap bitmap;
+		private final Bitmap bitmap;
 
-        public CropTask(Bitmap bitmap) {
-            this.bitmap = bitmap;
-        }
+		public CropTaskExecutor(Bitmap bitmap) {
+			this.bitmap = bitmap;
+		}
 
-        @Override
-        protected CropTaskResult doInBackground(Void... params) {
-            CropTaskResult result = new CropTaskResult();
-            try {
-                Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 400, 400, false);
-                result.points = getEdgePoints(scaledBmp);
-                upScalePoints(result.points, bitmap, scaledBmp.getWidth(), scaledBmp.getHeight());
-                scaledBmp.recycle();
-            } catch (IOException e) {
-                throw new RuntimeException("Not able to resize image", e);
-            }
-            return result;
-        }
+		public void executeTask() {
+			executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					CropTaskResult result = new CropTaskResult();
+					try {
+						Bitmap scaledBmp = ImageResizer.resizeImage(bitmap, 400, 400, false);
+						result.points = getEdgePoints(scaledBmp);
+						upScalePoints(result.points, bitmap, scaledBmp.getWidth(), scaledBmp.getHeight());
+						scaledBmp.recycle();
 
-        @Override
-        protected void onPostExecute(CropTaskResult cropTaskResult) {
-            onCropTaskFinished(cropTaskResult);
-            dismissDialog();
-        }
-    }
+						notifyResult(result);
+					} catch (IOException e) {
+						throw new RuntimeException("Not able to resize image", e);
+					}
+				}
+			});
+		}
+
+		private void notifyResult(final CropTaskResult result) {
+			resultHandler.post(new Runnable() {
+				@Override
+				public void run() {
+					onCropTaskFinished(result);
+					dismissDialog();
+				}
+			});
+		}
+
+	}
 
     private static class CropTaskResult {
         Map<Integer, PointF> points;
