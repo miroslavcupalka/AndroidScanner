@@ -11,6 +11,8 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import androidx.core.content.ContextCompat;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +34,9 @@ public class PolygonView extends FrameLayout {
     private ImageView midPointer34;
     private ImageView midPointer24;
     private PolygonView polygonView;
+
+    private int validShapeColor;
+    private int invalidShapeColor;
 
     public PolygonView(Context context) {
         super(context);
@@ -68,6 +73,9 @@ public class PolygonView extends FrameLayout {
 
         midPointer24 = getImageView(0, getHeight() / 2);
         midPointer24.setOnTouchListener(new MidPointTouchListenerImpl(pointer2, pointer4));
+
+        validShapeColor = ContextCompat.getColor(getContext(), R.color.blue);
+        invalidShapeColor = ContextCompat.getColor(getContext(), R.color.orange);
 
         addView(pointer1);
         addView(pointer2);
@@ -277,9 +285,9 @@ public class PolygonView extends FrameLayout {
                 case MotionEvent.ACTION_UP:
                     int color = 0;
                     if (isValidShape(getPoints())) {
-                        color = getResources().getColor(R.color.blue);
+                        color = validShapeColor;
                     } else {
-                        color = getResources().getColor(R.color.orange);
+                        color = invalidShapeColor;
                     }
                     paint.setColor(color);
                     break;
