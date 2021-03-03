@@ -3,6 +3,7 @@ package com.scanlibrary;
 
 import android.graphics.Bitmap;
 
+import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.CvException;
 import org.opencv.core.CvType;
@@ -25,7 +26,7 @@ public class ScanUtils {
     // ===========================================================
 
     static {
-        System.loadLibrary("opencv_java");
+        System.loadLibrary("opencv_java3");
     }
 
     private static final String LOG_TAG = ScanUtils.class.getSimpleName();
