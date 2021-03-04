@@ -2,9 +2,15 @@ package com.scanlibrary;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PointF;
+import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +29,12 @@ import java.util.Map;
  */
 public class PolygonView extends FrameLayout {
 
+    private static final String TAG = PolygonView.class.getSimpleName();
+
+    private final static int LOUPE_RADIUS_DP = 100;
+    private final static int MAGNIFICATION_FACTOR_DEFAULT = 2;
+    private final static int EXTRA_OFFSET = 15;
+
     protected Context context;
     private Paint paint;
     private ImageView pointer1;
@@ -37,6 +49,23 @@ public class PolygonView extends FrameLayout {
 
     private int validShapeColor;
     private int invalidShapeColor;
+
+
+    private ImageView sourceBitmap = null;
+
+    private int mFactor = MAGNIFICATION_FACTOR_DEFAULT;
+
+    private Path mLoupePath = new Path();
+    private Paint mLupeBorderPaint;
+    private RectF mDrawableBounds = new RectF();
+    private Matrix mDrawMatrix = new Matrix();
+
+    PointF DownPT = new PointF(); // Record Mouse Position When Pressed Down
+    PointF StartPT = new PointF(); // Record Start Position of 'img'
+
+    private boolean mIsTouching = false;
+    private float mLoupeRadius = 100f;
+    private Matrix matrixImageView;
 
     public PolygonView(Context context) {
         super(context);
@@ -95,9 +124,15 @@ public class PolygonView extends FrameLayout {
 
     private void initPaint() {
         paint = new Paint();
-        paint.setColor(getResources().getColor(R.color.blue));
+        paint.setColor(validShapeColor);
         paint.setStrokeWidth(2);
         paint.setAntiAlias(true);
+
+        mLupeBorderPaint = new Paint();
+        mLupeBorderPaint.setStrokeWidth(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8, getResources().getDisplayMetrics()));
+        mLupeBorderPaint.setStyle(Paint.Style.STROKE);
+        mLupeBorderPaint.setColor(validShapeColor);
+        mLupeBorderPaint.setAlpha(127);
     }
 
     public Map<Integer, PointF> getPoints() {
@@ -154,6 +189,8 @@ public class PolygonView extends FrameLayout {
 
         pointer4.setX(pointFMap.get(3).x);
         pointer4.setY(pointFMap.get(3).y);
+
+        Log.d(TAG, "setPointsCoordinates - pointer1.getX() = " + pointer1.getX() + ", pointer1.getY() = " + pointer1.getY());
     }
 
     @Override
@@ -171,6 +208,10 @@ public class PolygonView extends FrameLayout {
         midPointer34.setY(pointer4.getY() - ((pointer4.getY() - pointer3.getY()) / 2));
         midPointer12.setX(pointer2.getX() - ((pointer2.getX() - pointer1.getX()) / 2));
         midPointer12.setY(pointer2.getY() - ((pointer2.getY() - pointer1.getY()) / 2));
+
+        if (mIsTouching) {
+            drawLoupe(canvas);
+        }
     }
 
     private ImageView getImageView(int x, int y) {
@@ -184,10 +225,62 @@ public class PolygonView extends FrameLayout {
         return imageView;
     }
 
+    public void setSourceImageView(ImageView sourceImageView) {
+        this.sourceBitmap = sourceImageView;
+        matrixImageView = this.sourceBitmap.getImageMatrix();
+        mDrawableBounds.set((this.sourceBitmap.getDrawable()).getBounds());
+        matrixImageView.mapRect(mDrawableBounds);
+        invalidate();
+    }
+
+    private void drawLoupe(Canvas canvas) {
+        if (sourceBitmap == null) {
+            Log.w(TAG, "In order to get zoom in your images the src image should be a Bitmap");
+            return;
+        }
+
+        canvas.save();
+        clipCircle(canvas);
+
+        mDrawMatrix.reset();
+//        mDrawMatrix.preScale(mFactor, mFactor);
+        mDrawMatrix.postConcat(this.sourceBitmap.getImageMatrix());
+
+        float px = pointer1.getX() - mDrawableBounds.left;
+        float py = pointer1.getY() - mDrawableBounds.top ;
+
+        float[] f = new float[9];
+        matrixImageView.getValues(f);
+
+        float scaleX = f[Matrix.MSCALE_X];
+        float scaleY = f[Matrix.MSCALE_Y];
+
+//        Log.d(TAG,"matrixImageView: scaleX = " +scaleX + ", scaleY = " + scaleY);
+//        Log.d(TAG,"pointer1: x = " + pointer1.getX() + ", y = " + pointer1.getY());
+//        Log.d(TAG,"(pointer1.getMeasuredWidth() /2f) = " + (pointer1.getMeasuredWidth() /2f));
+//        Log.d(TAG,"mDrawableBounds.left = " + mDrawableBounds.left);
+//        Log.d(TAG,"mDrawableBounds.top = " + mDrawableBounds.top);
+//        Log.d(TAG, "px = " + px + ", py = " + py);
+
+        mDrawMatrix.postTranslate(-px * (scaleX), -py * (scaleY));
+        Log.d(TAG,"mDrawMatrix = " + mDrawMatrix);
+
+        canvas.drawBitmap(((BitmapDrawable)sourceBitmap.getDrawable()).getBitmap(), mDrawMatrix, null);
+        // draw border
+        canvas.drawCircle(150, 150, mLoupeRadius, mLupeBorderPaint);
+        canvas.restore();
+    }
+
+    private void clipCircle(Canvas canvas) {
+        mLoupePath.reset();
+        mLoupePath.addCircle(150, 150, mLoupeRadius, Path.Direction.CW);
+        canvas.clipPath(mLoupePath);
+    }
+
     private class MidPointTouchListenerImpl implements OnTouchListener {
 
-        PointF DownPT = new PointF(); // Record Mouse Position When Pressed Down
-        PointF StartPT = new PointF(); // Record Start Position of 'img'
+//        PointF DownPT = new PointF(); // Record Mouse Position When Pressed Down
+//        PointF StartPT = new PointF(); // Record Start Position of 'img'
 
         private ImageView mainPointer1;
         private ImageView mainPointer2;
@@ -200,6 +293,7 @@ public class PolygonView extends FrameLayout {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             int eid = event.getAction();
+            mIsTouching = !(eid == MotionEvent.ACTION_CANCEL || eid == MotionEvent.ACTION_UP);
             switch (eid) {
                 case MotionEvent.ACTION_MOVE:
                     PointF mv = new PointF(event.getX() - DownPT.x, event.getY() - DownPT.y);
@@ -262,12 +356,15 @@ public class PolygonView extends FrameLayout {
 
     private class TouchListenerImpl implements OnTouchListener {
 
-        PointF DownPT = new PointF(); // Record Mouse Position When Pressed Down
-        PointF StartPT = new PointF(); // Record Start Position of 'img'
+//        PointF DownPT = new PointF(); // Record Mouse Position When Pressed Down
+//        PointF StartPT = new PointF(); // Record Start Position of 'img'
+
+        int[] mViewCoordinatesInSurface = new int[2];
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             int eid = event.getAction();
+            mIsTouching = !(eid == MotionEvent.ACTION_CANCEL || eid == MotionEvent.ACTION_UP);
             switch (eid) {
                 case MotionEvent.ACTION_MOVE:
                     PointF mv = new PointF(event.getX() - DownPT.x, event.getY() - DownPT.y);
@@ -276,6 +373,8 @@ public class PolygonView extends FrameLayout {
                         v.setY((int) (StartPT.y + mv.y));
                         StartPT = new PointF(v.getX(), v.getY());
                     }
+//                    v.getLocationOnScreen(mViewCoordinatesInSurface);
+//                    Log.d(TAG, "getLocationOnScreen: x = " + mViewCoordinatesInSurface[0] + ", y = " + mViewCoordinatesInSurface[1]);
                     break;
                 case MotionEvent.ACTION_DOWN:
                     DownPT.x = event.getX();
@@ -299,6 +398,5 @@ public class PolygonView extends FrameLayout {
         }
 
     }
-
 
 }
