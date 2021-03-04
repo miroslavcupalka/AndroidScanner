@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="finish">Завершить</string>
-    <string name="crop">Обрезать</string>
-    <string name="rotate">Повернуть</string>
-    <string name="cant_crop">Не можем обрезать изображение, меняйте пункты</string>
-    <string name="transforming">Трансформируется...</string>
-
-    <string name="mode_none">Никакой</string>
-    <string name="mode_black_white">Черно-белый</string>
-    <string name="mode_magic">Волшебный</string>
+	<string name="done">Завершить</string>
+	<string name="crop">Обрезать</string>
+	<string name="rotate">Повернуть</string>
+	<string name="cant_crop">Не можем обрезать изображение, меняйте пункты</string>
+	<string name="transforming">Трансформируется...</string>
+	<string name="color">Цвет</string>
+	<string name="mode_none">Никакой</string>
+	<string name="mode_black_white">Черно-белый</string>
+	<string name="mode_magic">Волшебный</string>
+	<string name="auto_crop"> Автоматическая обрезка </string>
+	<string name="warning"> Предупреждение </string>
+	<string name="permission_camera_rationale"> Для продолжения требуется разрешение камеры </string>
+	<string name="button_allow"> Разрешить </string>
+	<string name="button_deny"> Запретить </string>
 </resources>

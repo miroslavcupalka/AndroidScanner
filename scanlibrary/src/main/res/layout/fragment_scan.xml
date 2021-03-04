@@ -8,15 +8,13 @@
 	<FrameLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:layout_gravity="center"
-		android:layout_margin="@dimen/scanPadding">
+		android:layout_gravity="center">
 
 		<FrameLayout
 			android:id="@+id/sourceFrame"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:layout_gravity="center"
-			android:layout_margin="@dimen/scanPadding">
+			android:layout_gravity="center">
 
 			<ImageView
 				android:id="@+id/sourceImageView"

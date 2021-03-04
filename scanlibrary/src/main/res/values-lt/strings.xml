@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="finish">Baigti</string>
-    <string name="crop">Transformuoti</string>
-    <string name="rotate">Pasukti</string>
-    <string name="cant_crop">Negalima iškirpti dokumento, pakeiskite taškus</string>
-    <string name="transforming">Transformuojama...</string>
-
-    <string name="mode_none">Joks</string>
-    <string name="mode_black_white">Juodai baltas</string>
-    <string name="mode_magic">Magiškas</string>
+	<string name="done">Baigti</string>
+	<string name="crop">Transformuoti</string>
+	<string name="rotate">Pasukti</string>
+	<string name="color">Colore</string>
+	<string name="cant_crop">Negalima iškirpti dokumento, pakeiskite taškus</string>
+	<string name="transforming">Transformuojama...</string>
+	<string name="mode_none">Joks</string>
+	<string name="mode_black_white">Juodai baltas</string>
+	<string name="mode_magic">Magiškas</string>
+	<string name="auto_crop"> Ritaglio automatico </string>
+	<string name="warning"> Avviso </string>
+	<string name="permission_camera_rationale"> È necessaria l\'autorizzazione per la fotocamera per continuare </string>
+	<string name="button_allow"> Consenti </string>
+	<string name="button_deny"> Nega </string>
 </resources>

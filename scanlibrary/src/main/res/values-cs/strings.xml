@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="document_scann_lib_name" translatable="false">ScanLibrary</string>
+    <string name="done">Potvrdit</string>
+    <string name="crop">Oříznout</string>
+    <string name="rotate">Rotace</string>
+	<string name="color">Barva</string>
+    <string name="cant_crop">Nelze oříznout obrázek, změnit body </string>
+    <string name="transforming">Transformace...</string>
+    <string name="mode_none">Žádná úprava</string>
+    <string name="mode_black_white">Černá &amp; Bílá</string>
+    <string name="mode_magic">Magie</string>
+	<string name="auto_crop">Automaticky</string>
+	<string name="warning">Upozornění</string>
+	<string name="permission_camera_rationale">K pokračování je nutné oprvnění pro kameru</string>
+	<string name="button_allow">Povolit</string>
+	<string name="button_deny">Zamítnout</string>
+</resources>
