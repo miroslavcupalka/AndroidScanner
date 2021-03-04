@@ -4,27 +4,26 @@ ScanLibrary is an android document scanning library built on top of OpenCV, usin
 # Screenshots
 
 <div align="center">
-
-		<img width="23%" src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/a.png" alt="Scan Points" title="Scan Points"</img>
+	<img width="23%" src="https://raw.githubusercontent.com/miroslavcupalka/AndroidScanner/master/screenshots/a.png" alt="Scan Points" title="Scan Points"</img>
         <img height="0" width="8px">
-        <img width="23%" src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/b.png" alt="Magic colors" title="Magic colorst"</img>
+        <img width="23%" src="https://raw.githubusercontent.com/miroslavcupalka/AndroidScanner/master/screenshots/b.png" alt="Magic colors" title="Magic colorst"</img>
         <img height="0" width="8px">
-        <img width="23%"src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/c.png" alt="Palette" title="Palette"></img>
+        <img width="23%"src="https://raw.githubusercontent.com/miroslavcupalka/AndroidScanner/master/screenshots/c.png" alt="Palette" title="Palette"></img>
         <img height="0" width="8px">
-        <img width="23%" src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/d.png" alt="Gray colors" title="Gray colorst"></img>
+        <img width="23%" src="https://raw.githubusercontent.com/miroslavcupalka/AndroidScanner/master/screenshots/d.png" alt="Gray colors" title="Gray colorst"></img>
         <img height="0" width="8px">
-        <img width="23%" src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/e.png" alt="Normal colors" title="Normal colors"></img>
+        <img width="23%" src="https://raw.githubusercontent.com/miroslavcupalka/AndroidScanner/master/screenshots/e.png" alt="Normal colors" title="Normal colors"></img>
         <img height="0" width="8px">
-        <img width="23%" src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/f.png" alt="Rotated Image" title="Rotated Image"></img>
+        <img width="23%" src="https://raw.githubusercontent.com/miroslavcupalka/AndroidScanner/master/screenshots/f.png" alt="Rotated Image" title="Rotated Image"></img>
         <img height="0" width="8px">
-        <img width="23%" src="https://raw.githubusercontent.com/andrejlukasevic/AndroidScannerDemo/master/ScanDemoExample/screenshots/g.png" alt="Zoomed Image" title="Zoomed Image"></img>
+        <img width="23%" src="https://raw.githubusercontent.com/miroslavcupalka/AndroidScanner/master/screenshots/g.png" alt="Zoomed Image" title="Zoomed Image"></img>
 </div>
 
 # Using it in your project
 - If you are using android studio, add the dependency to your main app build.gradle this way: 
 
 ```	    
--  compile 'com.github.andrejlukasevic:document-scanner:4.0.0'  // Check for latest version and replace version code
+-  implementation 'com.github.miroslavcupalka:AndroidScanner:5.0.0'  // Check for latest version and replace version code
 ```
 - In your activity or fragment when you want to give an option of document scanning to user then:
 Start the scanlibrary ScanActivity, with this the app will go to library, below is the sample code snippet:
