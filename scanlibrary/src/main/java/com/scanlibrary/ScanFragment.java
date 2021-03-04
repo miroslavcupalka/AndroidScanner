@@ -1,10 +1,11 @@
 package com.scanlibrary;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
-import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
@@ -24,10 +25,13 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.opencv.core.Point;
 
@@ -49,6 +53,7 @@ public class ScanFragment extends Fragment {
     // ===========================================================
     // Constants
     // ===========================================================
+    public static final String TAG = ScanFragment.class.getSimpleName();
 
     public static final String RESULT_IMAGE_PATH = "imgPath";
     public static final String EXTRA_IMAGE_LOCATION = "img_location";
@@ -62,7 +67,9 @@ public class ScanFragment extends Fragment {
 
     private static final AtomicInteger ID_INCREMENTER = new AtomicInteger(0);
 
-    // ===========================================================
+	private static final int PERMISSION_REQUEST_CODE = 457;
+
+	// ===========================================================
     // Fields
     // ===========================================================
 
@@ -79,7 +86,7 @@ public class ScanFragment extends Fragment {
     private boolean isCropMode = false;
     private int currentMode = MODE_MAGIC;
 
-    private int previousOreantation = -1;
+    private int previousOrientation = -1;
 
     private final Handler resultHandler = new Handler(Looper.getMainLooper());
     private final Executor executor = Executors.newSingleThreadExecutor();
@@ -114,15 +121,29 @@ public class ScanFragment extends Fragment {
         viewHolder.prepare(view);
         super.onViewCreated(view, savedInstanceState);
 
-        int currentOreantation = Utils.getScreenOrientation(getActivity());
-        if (previousOreantation == -1) {
-            previousOreantation = currentOreantation;
-        } else if (previousOreantation != currentOreantation) {
+        int currentOrientation = Utils.getScreenOrientation(getActivity());
+        if (previousOrientation == -1) {
+            previousOrientation = currentOrientation;
+        } else if (previousOrientation != currentOrientation) {
             points = null;
         }
 
         if (takenPhotoLocation == null) {
-            takePhoto();
+
+            if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) ==PackageManager.PERMISSION_GRANTED) {
+                takePhoto();
+            } else if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
+	            new MaterialAlertDialogBuilder(getContext())
+			            .setTitle(R.string.warning)
+			            .setMessage(R.string.permission_camera_rationale)
+			            .setPositiveButton(R.string.button_allow, (dialog, which) -> requestPermissions(new String[]{Manifest.permission.CAMERA}, PERMISSION_REQUEST_CODE))
+			            .setNegativeButton(R.string.button_deny, (dialog, which) -> getActivity().finish())
+	                    .create()
+			            .show();
+            } else {
+                requestPermissions(new String[]{Manifest.permission.CAMERA}, PERMISSION_REQUEST_CODE);
+            }
+
         } else {
             if (documentBitmap != null) {
                 updateViewsWithNewBitmap();
@@ -166,6 +187,18 @@ public class ScanFragment extends Fragment {
             }
         }
     }
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                takePhoto();
+            } else {
+                if (getActivity() != null)
+                    getActivity().finish();
+            }
+        }
+	}
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
